@@ -1,8 +1,6 @@
 package com.example.employee_service.common.persistence.dto;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
@@ -26,6 +24,10 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public abstract class BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    Long id;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
