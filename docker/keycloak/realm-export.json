@@ -1,7 +1,7 @@
 {
-  "id": "platform",
-  "realm": "platform",
-  "displayName": "Platform Enterprise Realm",
+  "id": "hrManagement",
+  "realm": "hrManagement",
+  "displayName": "HR Management Realm",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": true,
@@ -20,6 +20,14 @@
       {
         "name": "USER",
         "description": "Người dùng thông thường"
+      },
+      {
+        "name": "HR_MANAGER",
+        "description": "Quản lý nhân sự"
+      },
+      {
+        "name": "EMPLOYEE",
+        "description": "Nhân viên"
       }
     ]
   },
@@ -49,7 +57,7 @@
       "consentRequired": false,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "publicClient": true,
       "frontchannelLogout": true,
@@ -75,13 +83,53 @@
         "offline_access",
         "microprofile-jwt"
       ]
+    },
+    {
+      "clientId": "employee_service_be",
+      "name": "employee_service_be",
+      "description": "Client backend Employee Service (client_credentials)",
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "change-me",
+      "redirectUris": [],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "oidc.ciba.grant.enabled": "false",
+        "display.on.consent.screen": "false",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "backchannel.logout.session.required": "false",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
     }
   ],
   "users": [
     {
       "username": "admin",
       "enabled": true,
-      "email": "admin@platform.com",
+      "email": "admin@hrmanagement.com",
       "firstName": "Admin",
       "lastName": "Platform",
       "emailVerified": true,
@@ -100,7 +148,7 @@
     {
       "username": "user",
       "enabled": true,
-      "email": "user@platform.com",
+      "email": "user@hrmanagement.com",
       "firstName": "User",
       "lastName": "Standard",
       "emailVerified": true,

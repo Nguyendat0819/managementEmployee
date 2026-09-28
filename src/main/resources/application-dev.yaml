@@ -38,8 +38,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:9999/realms/platform}
-          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:9999/realms/platform/protocol/openid-connect/certs}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:9999/realms/hrManagement}
+          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:9999/realms/hrManagement/protocol/openid-connect/certs}
 
 logging:
   level:

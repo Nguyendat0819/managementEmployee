@@ -63,9 +63,9 @@ spring:
       resourceserver:
         jwt:
           # Keycloak tự động expose OpenID Configuration metadata tại endpoint này
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/platform}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/hrManagement}
           # Fallback rõ ràng nếu Spring không tự detect được JWKS endpoint
-          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:8180/realms/platform/protocol/openid-connect/certs}
+          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:8180/realms/hrManagement/protocol/openid-connect/certs}
       # OAuth2 Client (client_credentials) — dùng cho BE-to-BE khi không có user-token
       client:
         registration:
@@ -76,7 +76,7 @@ spring:
             authorization-grant-type: client_credentials
         provider:
           keycloak:
-            token-uri: ${KEYCLOAK_TOKEN_URI:http://localhost:8180/realms/platform/protocol/openid-connect/token}
+            token-uri: ${KEYCLOAK_TOKEN_URI:http://localhost:8180/realms/hrManagement/protocol/openid-connect/token}
 
   # ============================================================
   #  Jackson
@@ -165,9 +165,10 @@ app:
     enabled: true
     base-url: ${INTERNAL_BASE_URL:http://localhost:9999}
 
-  # Keycloak base URL (giữ nguyên theo hệ thống hiện tại)
+  # Keycloak base URL và realm
   keycloak:
     base-url: ${KEYCLOAK_BASE_URL:http://localhost:8180}
+    realm: ${KEYCLOAK_REALM:hrManagement}
 
 # ============================================================
 #  Mapping cho @HttpExchange client
