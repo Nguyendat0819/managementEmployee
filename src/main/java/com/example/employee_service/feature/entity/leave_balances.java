@@ -14,7 +14,7 @@ import java.util.Objects;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "leave_balances", schema = "Hr_service")
+@Table(name = "leave_balances", schema = "hr_service")
 public class leave_balances  {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

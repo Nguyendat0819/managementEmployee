@@ -14,11 +14,14 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "users", schema = "Hr_service")
+@Table(name = "users", schema = "hr_service")
 public class users extends BaseEntity {
 
     @Column(name = "email", nullable = false, length = 255)
     String email;
+
+    @Column(name = "user_name", nullable = false, length = 255)
+    String userName;
 
     @Column(name = "keycloak_user_id", nullable = false, length = 36)
     String keycloakUserId;
@@ -33,5 +36,5 @@ public class users extends BaseEntity {
     LocalDateTime lastLoginAt;
 
     @Column(name = "is_deleted", nullable = false)
-    Boolean isDeleted;
+    Boolean isDeleted = false;
 }

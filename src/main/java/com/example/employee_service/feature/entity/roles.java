@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "roles", schema = "Hr_service")
+@Table(name = "roles", schema = "hr_service")
 public class roles extends BaseEntity {
 
     @Column(name = "role_code", nullable = false, length = 255)

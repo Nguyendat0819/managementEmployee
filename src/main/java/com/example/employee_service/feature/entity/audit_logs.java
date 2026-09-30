@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "audit_logs", schema = "Hr_service")
+@Table(name = "audit_logs", schema = "hr_service")
 public class audit_logs {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

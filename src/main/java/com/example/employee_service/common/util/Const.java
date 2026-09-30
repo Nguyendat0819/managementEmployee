@@ -31,4 +31,16 @@ public final class Const {
 
     // ---- File ----
     public static final DateTimeFormatter FILE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+
+    // Hoạt động
+    public static final String IS_ACTIVE = "ACTIVE";
+    public static final String IS_INACTIVE = "INACTIVE";
+
+    // Xóa mềm
+    public static final boolean IN_DELETED = false; // chưa xóa
+    public static final boolean IS_DELETED = true; // đã xóa
+
+    //
+    public static final boolean IS_ACTIVE_KEYCLOAK  = true;
+    public static final boolean IS_INACTIVE_KEYCLOAK = false;
 }

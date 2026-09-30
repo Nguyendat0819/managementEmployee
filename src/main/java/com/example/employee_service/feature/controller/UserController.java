@@ -2,9 +2,13 @@ package com.example.employee_service.feature.controller;
 
 import com.example.employee_service.common.response.ApiResponse;
 import com.example.employee_service.common.response.ApiResponseFactory;
+import com.example.employee_service.common.response.PageResponse;
+import com.example.employee_service.feature.constant.enums.UsersEnum;
 import com.example.employee_service.feature.controller.api.UserApi;
 import com.example.employee_service.feature.model.request.UserCreateRequest;
+import com.example.employee_service.feature.model.response.UserResponse;
 import com.example.employee_service.feature.service.KeycloakService;
+import com.example.employee_service.feature.service.UsersService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -17,10 +21,22 @@ public class UserController implements UserApi {
 
     ApiResponseFactory apiResponseFactory;
     KeycloakService keycloakService;
+    UsersService usersService;
 
     @Override
     public ApiResponse<String> createUser(UserCreateRequest request) {
         String keycloakUserId = keycloakService.createUser(request);
+        UserResponse userResponse = usersService.create(request, keycloakUserId);
         return apiResponseFactory.success(keycloakUserId);
+    }
+
+    @Override
+    public ApiResponse<PageResponse<UserResponse>> getUsers(){
+        return apiResponseFactory.success(usersService.getUsers());
+    }
+
+    @Override
+    public ApiResponse<UserResponse> updateUserStatus(String userName, UsersEnum action) {
+        return apiResponseFactory.success(usersService.updateUserStatus(userName, action));
     }
 }

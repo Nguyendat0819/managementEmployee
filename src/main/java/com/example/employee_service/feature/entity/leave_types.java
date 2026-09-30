@@ -12,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "leave_types", schema = "Hr_service")
+@Table(name = "leave_types", schema = "hr_service")
 public class leave_types extends BaseEntity {
 
 

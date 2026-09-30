@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "employees", schema = "Hr_service")
+@Table(name = "employees", schema = "hr_service")
 public class employees extends BaseEntity {
 
     @Column(name = "employee_code", nullable = false, length = 255)

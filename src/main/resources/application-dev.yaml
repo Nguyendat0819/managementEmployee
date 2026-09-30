@@ -15,22 +15,6 @@
 # ============================================================
 
 spring:
-  # ----------------------------------------------------------
-  #  TẮT DB: loại bỏ tất cả autoconfig liên quan DataSource/JPA
-  #  (list đầy đủ scan từ spring-boot-autoconfigure 4.1.0)
-  # ----------------------------------------------------------
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceInitializationAutoConfiguration
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration
-      - org.springframework.boot.jdbc.autoconfigure.JdbcClientAutoConfiguration
-      - org.springframework.boot.jdbc.autoconfigure.JdbcTemplateAutoConfiguration
-      - org.springframework.boot.jdbc.autoconfigure.XADataSourceAutoConfiguration
-      - org.springframework.boot.jdbc.autoconfigure.health.DataSourceHealthContributorAutoConfiguration
-      - org.springframework.boot.jdbc.autoconfigure.metrics.DataSourcePoolMetricsAutoConfiguration
-      - org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration
-
   # Tắt auth khi dev local — đỡ phải dựng Keycloak + cấp token mỗi lần test.
   # (Mọi request đều permitAll, nhưng SecurityContext + MdcLoggingFilter vẫn hoạt động,
   # SecurityUtil.getCurrentUsername() trả về "anonymous".)
@@ -50,10 +34,9 @@ app:
   # ----------------------------------------------------------
   #  Cờ bật/tắt toàn bộ tầng DB ở app-level
   #  - JpaAuditingConfig chỉ load khi true (mặc định true).
-  #  - Dev override false để chạy không cần PostgreSQL.
   # ----------------------------------------------------------
   database:
-    enabled: ${APP_DATABASE_ENABLED:false}
+    enabled: ${APP_DATABASE_ENABLED:true}
 
   security:
     enabled: ${APP_SECURITY_ENABLED:false}   # dev: tắt filter chain để test endpoint dễ

@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "payslips", schema = "Hr_service")
+@Table(name = "payslips", schema = "hr_service")
 public class payslips extends BaseEntity {
 
     @Column(name = "run", nullable = false)

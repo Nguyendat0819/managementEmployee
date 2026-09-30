@@ -27,4 +27,12 @@ public interface KeycloakService {
      * Xoá người dùng khỏi Keycloak (dùng khi rollback).
      */
     void deleteUser(String keycloakUserId);
+
+    /**
+     * Cập nhật trạng thái kích hoạt (enabled) của người dùng trên Keycloak.
+     *
+     * @param keycloakUserId ID của người dùng trên Keycloak (UUID)
+     * @param enabled        true nếu kích hoạt (ACTIVE), false nếu vô hiệu hóa (INACTIVE)
+     */
+    void updateUserEnabled(String keycloakUserId, boolean enabled);
 }

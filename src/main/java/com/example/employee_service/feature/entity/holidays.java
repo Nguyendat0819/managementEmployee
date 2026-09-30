@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "holidays", schema = "Hr_service")
+@Table(name = "holidays", schema = "hr_service")
 public class holidays extends BaseEntity {
 
 

@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "employee_shift_assignments", schema = "Hr_service")
+@Table(name = "employee_shift_assignments", schema = "hr_service")
 public class employee_shift_assignments{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

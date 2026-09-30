@@ -162,6 +162,16 @@
       "realmRoles": [
         "USER"
       ]
+    },
+    {
+      "username": "service-account-employee_service_be",
+      "enabled": true,
+      "serviceAccountClientId": "employee_service_be",
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ]
+      }
     }
   ]
 }

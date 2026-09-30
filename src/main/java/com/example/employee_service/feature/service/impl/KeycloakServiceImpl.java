@@ -6,6 +6,7 @@ import com.example.employee_service.common.response.DomainCode;
 import com.example.employee_service.feature.model.dto.CredentialRepresentation;
 import com.example.employee_service.feature.model.dto.KeycloakUserRepresentation;
 import com.example.employee_service.feature.model.request.UserCreateRequest;
+import com.example.employee_service.feature.repository.UsersRepository;
 import com.example.employee_service.feature.service.KeycloakService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -34,13 +35,18 @@ import java.util.Map;
 public class KeycloakServiceImpl implements KeycloakService {
 
     static String CLIENT_REGISTRATION_ID = "internal";
-
+    UsersRepository usersRepository;
     KeycloakProperties keycloakProperties;
     OAuth2AuthorizedClientManager authorizedClientManager;
     RestClient restClient = RestClient.builder().build();
 
     @Override
     public String createUser(UserCreateRequest request) {
+//      Kiểm tra user đã tồn tại chưa
+        boolean checkUser = usersRepository.existsAllByEmailAndUserName(request.getEmail(), request.getUsername());
+        if(checkUser){
+            throw new BusinessException(DomainCode.CONFLICT);
+        }
         log.info("Bắt đầu tạo user trên Keycloak: username={}, email={}", request.getUsername(), request.getEmail());
 
         KeycloakUserRepresentation userRep = KeycloakUserRepresentation.builder()
@@ -158,6 +164,31 @@ public class KeycloakServiceImpl implements KeycloakService {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    @Override
+    public void updateUserEnabled(String keycloakUserId, boolean enabled) {
+        log.info("Cập nhật trạng thái enabled={} cho user Keycloak: {}", enabled, keycloakUserId);
+        String token = getAdminAccessToken();
+        String url = String.format("%s/admin/realms/%s/users/%s",
+                keycloakProperties.getBaseUrl(), keycloakProperties.getRealm(), keycloakUserId);
+
+        restClient.put()
+                .uri(url)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("enabled", enabled))
+                .retrieve()
+                .onStatus(status -> status.value() == 404, (req, resp) -> {
+                    throw new BusinessException(DomainCode.NOT_FOUND, "Không tìm thấy user trên Keycloak: " + keycloakUserId);
+                })
+                .onStatus(status -> !status.is2xxSuccessful(), (req, resp) -> {
+                    throw new BusinessException(DomainCode.EXTERNAL_SERVICE_ERROR,
+                            "Keycloak trả về lỗi khi cập nhật trạng thái user: " + resp.getStatusCode().value());
+                })
+                .toBodilessEntity();
+
+        log.info("Cập nhật trạng thái enabled={} cho user Keycloak '{}' thành công", enabled, keycloakUserId);
     }
 
     private String getAdminAccessToken() {
