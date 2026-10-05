@@ -3,7 +3,6 @@ package com.example.employee_service.feature.entity;
 import com.example.employee_service.common.persistence.dto.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -15,7 +14,7 @@ import java.time.LocalTime;
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
 @Table(name = "shifts", schema = "hr_service")
-public class shifts extends BaseEntity {
+public class Shifts extends BaseEntity {
 
     @Column(name = "shift_name", nullable = false, length = 100)
     String shiftName;

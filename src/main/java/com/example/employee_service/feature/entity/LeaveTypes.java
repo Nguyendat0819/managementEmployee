@@ -11,17 +11,16 @@ import lombok.experimental.FieldDefaults;
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
-@Table(name = "permissions", schema = "hr_service")
-public class permissions extends BaseEntity {
+@Table(name = "leave_types", schema = "hr_service")
+public class LeaveTypes extends BaseEntity {
 
-    @Column(name = "permission_code", nullable = false, length = 50)
-    String permissionCode;
 
-    @Column(name = "permission_name", nullable = false, length = 50)
-    String permissionName;
+    @Column(name = "name", nullable = false, length = 100)
+    String name;
 
-    @Column(name = "description", length = 255)
-    String description;
+    @Column(name = "max_days_per_year", nullable = false)
+    Integer maxDaysPerYear;
+
 
     @Column(name = "is_deleted", nullable = false)
     Boolean isDeleted;

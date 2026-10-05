@@ -3,7 +3,6 @@ package com.example.employee_service.feature.entity;
 import com.example.employee_service.common.persistence.dto.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -13,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
 @Table(name = "departments", schema = "hr_service")
-public class departments extends BaseEntity {
+public class Departments extends BaseEntity {
 
 
     @Column(name = "dept_code", nullable = false, length = 255)

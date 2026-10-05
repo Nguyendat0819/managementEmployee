@@ -3,7 +3,6 @@ package com.example.employee_service.feature.entity;
 import com.example.employee_service.common.persistence.dto.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -15,7 +14,7 @@ import java.math.BigDecimal;
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
 @Table(name = "payslips", schema = "hr_service")
-public class payslips extends BaseEntity {
+public class Payslips extends BaseEntity {
 
     @Column(name = "run", nullable = false)
     Long run;

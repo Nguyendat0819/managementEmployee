@@ -6,7 +6,6 @@ import com.example.employee_service.feature.model.request.UserCreateRequest;
 import com.example.employee_service.feature.model.response.UserResponse;
 
 public interface UsersService {
-    UserResponse create(UserCreateRequest request);
 
     PageResponse<UserResponse> getUsers();
 

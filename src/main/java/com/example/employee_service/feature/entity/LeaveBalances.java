@@ -1,21 +1,16 @@
 package com.example.employee_service.feature.entity;
 
-import com.example.employee_service.common.persistence.dto.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.Objects;
 
 
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
 @Table(name = "leave_balances", schema = "hr_service")
-public class leave_balances  {
+public class LeaveBalances {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

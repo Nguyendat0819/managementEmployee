@@ -11,4 +11,5 @@ public class JwtProperties {
     private String secret;
     private String issuer = "employee-service";
     private Duration accessTokenTtl = Duration.ofHours(1);
+    private Duration refreshTokenTtl = Duration.ofDays(7);
 }

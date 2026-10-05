@@ -3,7 +3,6 @@ package com.example.employee_service.feature.entity;
 import com.example.employee_service.common.persistence.dto.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -15,7 +14,7 @@ import java.time.LocalDateTime;
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
 @Table(name = "notifications", schema = "hr_service")
-public class notifications extends BaseEntity {
+public class Notifications extends BaseEntity {
 
     @Column(name = "user", nullable = false)
     Long user;

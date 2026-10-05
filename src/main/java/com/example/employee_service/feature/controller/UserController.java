@@ -21,11 +21,6 @@ public class UserController implements UserApi {
     ApiResponseFactory apiResponseFactory;
     UsersService usersService;
 
-    @Override
-    public ApiResponse<String> createUser(UserCreateRequest request) {
-        UserResponse userResponse = usersService.create(request);
-        return apiResponseFactory.success(userResponse.getUserName());
-    }
 
     @Override
     public ApiResponse<PageResponse<UserResponse>> getUsers(){

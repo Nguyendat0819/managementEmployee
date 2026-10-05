@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
 @Table(name = "audit_logs", schema = "hr_service")
-public class audit_logs {
+public class AuditLogs {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

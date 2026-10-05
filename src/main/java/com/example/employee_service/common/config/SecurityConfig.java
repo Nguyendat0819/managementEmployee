@@ -39,9 +39,13 @@ public class SecurityConfig {
     @Value("${app.security.enabled:true}")
     private boolean securityEnabled;
 
+    // Ba endpoint auth này phải gọi được trước khi có access token hoặc khi access
+    // token đã hết hạn; refresh kiểm tra refresh token, còn logout dùng token đó để revoke.
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/login",
-            "/api/users/register",
+            "/api/auth/refresh",
+            "/api/auth/logout",
+            "/api/auth/register",
             "/actuator/health/**",
             "/actuator/info",
             "/actuator/prometheus",
