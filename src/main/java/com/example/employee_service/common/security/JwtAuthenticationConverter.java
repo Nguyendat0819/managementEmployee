@@ -33,11 +33,13 @@ public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthen
     public AbstractAuthenticationToken convert(Jwt jwt) {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
 
-        // roles
+        // Role trong JWT được đổi thành ROLE_* để Spring Security dùng cho các
+        // kiểm tra role ở tầng method/security expression.
         Set<String> roles = getRolesFromJwt(jwt);
         roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(ROLE_PREFIX + role)));
 
-        // permissions (look-up từ role qua cache)
+        // Permission được tra từ cache theo role và gắn vào cùng Authentication;
+        // các kiểm tra quyền sau đó không cần query lại database trong request này.
         permissionResolver.permissionsOf(roles)
                 .forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
 

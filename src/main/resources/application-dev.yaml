@@ -31,12 +31,5 @@ app:
     enabled: ${APP_SECURITY_ENABLED:true}   # dev: bật filter để @AuthenticationPrincipal Jwt hoạt động
     cache:
       enabled: true
-    role-permissions:
-      ADMIN:
-        - employee:employee:read
-        - employee:employee:test
-      USER:
-        - employee:employee:read
-
   jwt:
     secret: ${APP_JWT_SECRET:development-only-secret-change-before-production}

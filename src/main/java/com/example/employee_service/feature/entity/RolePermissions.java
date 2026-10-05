@@ -19,4 +19,7 @@ public class RolePermissions extends BaseEntity {
 
     @Column(name = "permission_code", nullable = false, length = 50)
     String permissionCode;
+
+    @Column(name = "is_deleted", nullable = false)
+    Boolean isDeleted;
 }
