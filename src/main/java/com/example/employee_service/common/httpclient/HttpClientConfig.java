@@ -9,14 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.web.client.support.RestClientHttpServiceGroupConfigurer;
 import org.springframework.web.service.registry.ImportHttpServices;
 
@@ -38,17 +30,14 @@ import org.springframework.web.service.registry.ImportHttpServices;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class HttpClientConfig {
 
-    static String INTERNAL_REGISTRATION_ID = "internal";
-
     InternalProperties internalProperties;
 
     @Bean
     public RestClientHttpServiceGroupConfigurer httpServiceGroupConfigurer(
-            ObservationRegistry observationRegistry,
-            OAuth2AuthorizedClientManager authorizedClientManager) {
+            ObservationRegistry observationRegistry) {
         return groups -> groups.forEachClient((group, builder) -> {
             builder.observationRegistry(observationRegistry);                       // propagate traceId
-            builder.requestInterceptor(authInterceptor(authorizedClientManager));   // gắn Bearer token
+            builder.requestInterceptor(authInterceptor());
             String baseUrl = switch (group.name()) {
                 case "internal" -> internalProperties.getBaseUrl();
                 // case "external" -> externalProperties.getBaseUrl();
@@ -60,31 +49,9 @@ public class HttpClientConfig {
         });
     }
 
-    /** Manager lấy token {@code client_credentials} (luồng KHÔNG có user: job/kafka/startup). */
-    @Bean
-    public OAuth2AuthorizedClientManager authorizedClientManager(
-            ClientRegistrationRepository clientRegistrationRepository,
-            OAuth2AuthorizedClientService authorizedClientService) {
-        OAuth2AuthorizedClientProvider provider = OAuth2AuthorizedClientProviderBuilder.builder()
-                .clientCredentials()
-                .build();
-        AuthorizedClientServiceOAuth2AuthorizedClientManager manager =
-                new AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository, authorizedClientService);
-        manager.setAuthorizedClientProvider(provider);
-        return manager;
-    }
-
-    /**
-     * Gắn Bearer vào mỗi request ra ngoài: ưu tiên token user (request do người kích hoạt)
-     * giữ đúng danh tính; không có -> token {@code client_credentials} của service
-     * (vd khi reload cache ở {@code @PostConstruct} / job).
-     */
-    private ClientHttpRequestInterceptor authInterceptor(OAuth2AuthorizedClientManager authorizedClientManager) {
+    private ClientHttpRequestInterceptor authInterceptor() {
         return (request, body, execution) -> {
             String token = SecurityUtil.getTokenValue();
-            if (StringUtils.isBlank(token)) {
-                token = clientCredentialsToken(authorizedClientManager);
-            }
             if (StringUtils.isNotBlank(token)) {
                 request.getHeaders().setBearerAuth(token);
             }
@@ -92,12 +59,4 @@ public class HttpClientConfig {
         };
     }
 
-    private String clientCredentialsToken(OAuth2AuthorizedClientManager authorizedClientManager) {
-        OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest
-                .withClientRegistrationId(INTERNAL_REGISTRATION_ID)
-                .principal(INTERNAL_REGISTRATION_ID)
-                .build();
-        OAuth2AuthorizedClient client = authorizedClientManager.authorize(authorizeRequest);
-        return client != null ? client.getAccessToken().getTokenValue() : null;
-    }
 }

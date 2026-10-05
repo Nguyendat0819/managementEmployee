@@ -15,4 +15,6 @@ public interface UsersRepository extends BaseRepository<users, Long> {
     List<users> findAllByIsDeletedFalse();
 
     users findUserByUserName(String userName);
+
+    users findByUserNameAndIsDeletedFalse(String userName);
 }

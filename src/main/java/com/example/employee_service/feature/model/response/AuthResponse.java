@@ -11,6 +11,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class AuthResponse {
+    String userId;
     String user;
     String email;
     String firstName;

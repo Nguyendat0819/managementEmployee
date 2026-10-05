@@ -13,7 +13,7 @@ import static com.example.employee_service.common.util.SecurityUtil.getRoles;
  * Check quyền cấp ACTION — dùng trong SpEL của {@code @PreAuthorize} / {@code @RequiresPermission}.
  *
  * <p>Quy tắc: user có role {@link #ADMIN} -> luôn pass; ngược lại check theo permission code
- * đã được {@link KeycloakJwtAuthenticationConverter} nạp vào SecurityContext.</p>
+ * đã được {@link JwtAuthenticationConverter} nạp vào SecurityContext.</p>
  *
  * <p>Ví dụ:</p>
  * <pre>

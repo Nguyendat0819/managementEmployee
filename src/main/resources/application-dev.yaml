@@ -14,17 +14,6 @@
 #      trong application.yaml (hoặc tạo application-<tên>.yaml).
 # ============================================================
 
-spring:
-  # Tắt auth khi dev local — đỡ phải dựng Keycloak + cấp token mỗi lần test.
-  # (Mọi request đều permitAll, nhưng SecurityContext + MdcLoggingFilter vẫn hoạt động,
-  # SecurityUtil.getCurrentUsername() trả về "anonymous".)
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:9999/realms/hrManagement}
-          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:9999/realms/hrManagement/protocol/openid-connect/certs}
-
 logging:
   level:
     com.example.employee_service: DEBUG
@@ -39,6 +28,15 @@ app:
     enabled: ${APP_DATABASE_ENABLED:true}
 
   security:
-    enabled: ${APP_SECURITY_ENABLED:false}   # dev: tắt filter chain để test endpoint dễ
+    enabled: ${APP_SECURITY_ENABLED:true}   # dev: bật filter để @AuthenticationPrincipal Jwt hoạt động
     cache:
       enabled: true
+    role-permissions:
+      ADMIN:
+        - employee:employee:read
+        - employee:employee:test
+      USER:
+        - employee:employee:read
+
+  jwt:
+    secret: ${APP_JWT_SECRET:development-only-secret-change-before-production}

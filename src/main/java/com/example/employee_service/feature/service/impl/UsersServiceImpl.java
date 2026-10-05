@@ -8,10 +8,10 @@ import com.example.employee_service.feature.mapper.UserMapper;
 import com.example.employee_service.feature.model.request.UserCreateRequest;
 import com.example.employee_service.feature.model.response.UserResponse;
 import com.example.employee_service.feature.repository.UsersRepository;
-import com.example.employee_service.feature.service.KeycloakService;
 import com.example.employee_service.feature.service.UsersService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 
 import java.util.List;
@@ -24,14 +24,14 @@ public class UsersServiceImpl implements UsersService {
 
     public final UsersRepository usersRepository;
     private final UserMapper userMapper;
-    private final KeycloakService keycloakService;
+    private final PasswordEncoder passwordEncoder;
     @Override
-    public UserResponse create(UserCreateRequest request, String keycloakUserId){
+    public UserResponse create(UserCreateRequest request){
         users user = new users();
         user.setEmail(request.getEmail());
         user.setUserName(request.getUsername());
-        user.setKeycloakUserId(keycloakUserId);
-        user.setRoleCode(request.getRoleCode());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setRoleCode(request.getRoleCode() == null || request.getRoleCode().isBlank() ? "USER" : request.getRoleCode());
         user.setStatus(IS_ACTIVE);
         user.setIsDeleted(false);
 
@@ -57,21 +57,12 @@ public class UsersServiceImpl implements UsersService {
     public UserResponse updateUserStatus(String userName, UsersEnum action) {
         users getUser = usersRepository.findUserByUserName(userName);
 
-        // lấy ra keycloakUserId
-        String getUserKid = getUser.getKeycloakUserId();
-
-        // Gỡ tài khoản
-        if ("REVOKE".equalsIgnoreCase(UsersEnum.REVOKE.name())){
-            // set trang thai không hoat dong
+        if (action == UsersEnum.REVOKE) {
             getUser.setStatus(IS_INACTIVE);
-            // Xử lý tắt hoạt động của keycloak
-            keycloakService.updateUserEnabled(getUserKid,IS_INACTIVE_KEYCLOAK);
         }
 
-        // Khôi phục tài khoản
-        if("RESTORE".equalsIgnoreCase(UsersEnum.RESTORE.name())){
+        if (action == UsersEnum.RESTORE) {
             getUser.setStatus(IS_ACTIVE);
-            keycloakService.updateUserEnabled(getUserKid,IS_ACTIVE_KEYCLOAK);
         }
 
         usersRepository.save(getUser);

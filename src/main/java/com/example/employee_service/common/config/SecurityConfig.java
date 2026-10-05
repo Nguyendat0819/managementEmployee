@@ -1,6 +1,6 @@
 package com.example.employee_service.common.config;
 
-import com.example.employee_service.common.security.KeycloakJwtAuthenticationConverter;
+import com.example.employee_service.common.security.JwtAuthenticationConverter;
 import com.example.employee_service.common.security.RestSecurityExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +13,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -31,13 +33,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter;
+    private final JwtAuthenticationConverter jwtAuthenticationConverter;
     private final RestSecurityExceptionHandler restSecurityExceptionHandler;
 
     @Value("${app.security.enabled:true}")
     private boolean securityEnabled;
 
     private static final String[] PUBLIC_ENDPOINTS = {
+            "/api/auth/login",
+            "/api/users/register",
             "/actuator/health/**",
             "/actuator/info",
             "/actuator/prometheus",
@@ -66,7 +70,7 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtAuthenticationConverter))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
                         .authenticationEntryPoint(restSecurityExceptionHandler)
                         .accessDeniedHandler(restSecurityExceptionHandler))
                 .exceptionHandling(ex -> ex
@@ -74,6 +78,11 @@ public class SecurityConfig {
                         .accessDeniedHandler(restSecurityExceptionHandler));
 
         return http.build();
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean

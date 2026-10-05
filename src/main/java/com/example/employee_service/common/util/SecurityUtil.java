@@ -55,15 +55,9 @@ public final class SecurityUtil {
         if (jwt == null) {
             return roles;
         }
-        Map<String, Object> realmAccess = jwt.getClaimAsMap(REALM_ACCESS);
-        if (realmAccess != null) {
-            Object rolesObj = realmAccess.get(ROLES);
-            if (rolesObj instanceof List<?> list) {
-                roles = list.stream()
-                        .filter(String.class::isInstance)
-                        .map(String.class::cast)
-                        .collect(Collectors.toSet());
-            }
+        List<String> tokenRoles = jwt.getClaimAsStringList(ROLES);
+        if (tokenRoles != null) {
+            roles = tokenRoles.stream().collect(Collectors.toSet());
         }
         return roles;
     }

@@ -2,13 +2,7 @@ package com.example.employee_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Verify Spring context khởi động được với profile {@code dev}
@@ -17,20 +11,21 @@ import static org.mockito.Mockito.mock;
  * <p>Mục tiêu: bắt lỗi "Failed to configure a DataSource" sớm trong CI
  * mà không cần dựng PostgreSQL thật.</p>
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "spring.datasource.url=jdbc:h2:mem:devtest;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS hr_service",
+                "spring.datasource.username=sa",
+                "spring.datasource.password=",
+                "spring.datasource.driver-class-name=org.h2.Driver",
+                "spring.jpa.database=h2",
+                "spring.jpa.hibernate.ddl-auto=create-drop"
+        }
+)
 @ActiveProfiles("dev")
 class DevProfileApplicationTests {
 
     @Test
     void contextLoads() {
-    }
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        @Primary
-        JwtDecoder jwtDecoder() {
-            return mock(JwtDecoder.class);
-        }
     }
 }

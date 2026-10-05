@@ -27,7 +27,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Employee Service API")
                         .version("v1.0.0")
-                        .description("REST API for Employee Service — Spring Boot 4.x + OAuth2 Resource Server (Keycloak)")
+                        .description("REST API for Employee Service")
                         .contact(new Contact()
                                 .name("Backend Team")
                                 .email("backend@example.com"))

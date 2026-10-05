@@ -23,10 +23,10 @@ public class users extends BaseEntity {
     @Column(name = "user_name", nullable = false, length = 255)
     String userName;
 
-    @Column(name = "keycloak_user_id", nullable = false, length = 36)
-    String keycloakUserId;
+    @Column(name = "password_hash", length = 500)
+    String passwordHash;
 
-    @Column(name = "role_code", nullable = false, length = 255)
+    @Column(name = "role_code", length = 255)
     String roleCode;
 
     @Column(name = "status", nullable = false, length = 50)

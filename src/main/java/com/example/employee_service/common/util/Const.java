@@ -40,7 +40,4 @@ public final class Const {
     public static final boolean IN_DELETED = false; // chưa xóa
     public static final boolean IS_DELETED = true; // đã xóa
 
-    //
-    public static final boolean IS_ACTIVE_KEYCLOAK  = true;
-    public static final boolean IS_INACTIVE_KEYCLOAK = false;
 }

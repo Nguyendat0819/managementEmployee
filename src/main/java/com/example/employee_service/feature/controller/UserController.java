@@ -7,7 +7,6 @@ import com.example.employee_service.feature.constant.enums.UsersEnum;
 import com.example.employee_service.feature.controller.api.UserApi;
 import com.example.employee_service.feature.model.request.UserCreateRequest;
 import com.example.employee_service.feature.model.response.UserResponse;
-import com.example.employee_service.feature.service.KeycloakService;
 import com.example.employee_service.feature.service.UsersService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,14 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController implements UserApi {
 
     ApiResponseFactory apiResponseFactory;
-    KeycloakService keycloakService;
     UsersService usersService;
 
     @Override
     public ApiResponse<String> createUser(UserCreateRequest request) {
-        String keycloakUserId = keycloakService.createUser(request);
-        UserResponse userResponse = usersService.create(request, keycloakUserId);
-        return apiResponseFactory.success(keycloakUserId);
+        UserResponse userResponse = usersService.create(request);
+        return apiResponseFactory.success(userResponse.getUserName());
     }
 
     @Override

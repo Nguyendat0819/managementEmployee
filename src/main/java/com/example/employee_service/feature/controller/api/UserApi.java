@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/users")
 public interface UserApi {
 
-    @Operation(summary = "Tạo người dùng trên Keycloak")
-    @PostMapping
+    @Operation(summary = "Tạo người dùng nội bộ")
+    @PostMapping("/register")
     ApiResponse<String> createUser(@Valid @RequestBody UserCreateRequest request);
 
     @Operation(summary = "Lấy thông tin tài khoản")

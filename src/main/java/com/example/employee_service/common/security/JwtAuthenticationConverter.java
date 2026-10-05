@@ -17,7 +17,7 @@ import static com.example.employee_service.common.util.Const.ROLE_PREFIX;
 import static com.example.employee_service.common.util.SecurityUtil.getRolesFromJwt;
 
 /**
- * Chuyển {@link Jwt} của Keycloak thành {@link AbstractAuthenticationToken}: đọc roles +
+ * Chuyển {@link Jwt} nội bộ thành {@link AbstractAuthenticationToken}: đọc roles +
  * permission theo role (qua {@link PermissionResolver}) rồi gắn vào {@code authorities}.
  *
  * <p>Đây là điểm QUYẾT ĐỊNH user có những quyền gì — chạy 1 lần mỗi request tại filter,
@@ -25,7 +25,7 @@ import static com.example.employee_service.common.util.SecurityUtil.getRolesFrom
  */
 @Component
 @RequiredArgsConstructor
-public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     private final PermissionResolver permissionResolver;
 
