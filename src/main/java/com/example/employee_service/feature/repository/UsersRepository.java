@@ -15,4 +15,6 @@ public interface UsersRepository extends BaseRepository<Users, Long> {
     Users findUserByUserName(String userName);
 
     Users findByUserNameAndIsDeletedFalse(String userName);
+
+    long countByRoleCodeAndIsDeletedFalse(String roleCode);
 }

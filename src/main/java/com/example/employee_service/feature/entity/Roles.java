@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class Roles extends BaseEntity {
 
     @Column(name = "role_code", nullable = false, length = 255)
-    String rolleCode;
+    String roleCode;
 
     @Column(name = "role_name", nullable = false, length = 255)
     String roleName;

@@ -18,6 +18,10 @@ public interface EmployeesRepository extends BaseRepository<Employees, Long>, Em
 
     boolean existsByDepartmentCodeAndIsDeletedFalse(String departmentCode);
 
+    boolean existsByPositionCodeAndIsDeletedFalse(String positionCode);
+
+    long countByPositionCodeAndIsDeletedFalse(String positionCode);
+
     boolean existsByEmployeeCodeIgnoreCase(String employeeCode);
 
     boolean existsByEmployeeCodeIgnoreCaseAndIdNot(String employeeCode, Long id);

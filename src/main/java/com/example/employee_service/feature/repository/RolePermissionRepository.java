@@ -11,4 +11,8 @@ public interface RolePermissionRepository extends JpaRepository<RolePermissions,
     List<RolePermissions> findByRoleCodeInAndIsDeleted(List<String> roleCodes, boolean IsDeleted);
 
     List<RolePermissions> findAllByIsDeletedFalse();
+
+    List<RolePermissions> findAllByRoleCodeAndIsDeletedFalse(String roleCode);
+
+    long countByRoleCodeAndIsDeletedFalse(String roleCode);
 }
