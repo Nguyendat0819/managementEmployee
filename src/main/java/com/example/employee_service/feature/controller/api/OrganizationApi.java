@@ -1,6 +1,8 @@
 package com.example.employee_service.feature.controller.api;
 
 import com.example.employee_service.common.response.ApiResponse;
+import com.example.employee_service.common.security.RequiresPermission;
+import com.example.employee_service.feature.constant.PermissionDefine;
 import com.example.employee_service.feature.model.request.DepartmentsRequest;
 import com.example.employee_service.feature.model.request.DepartmentsUpdateRequest;
 import com.example.employee_service.feature.model.response.DepartmentResponse;
@@ -27,10 +29,12 @@ import java.util.List;
 public interface OrganizationApi {
     @Operation(summary = "Thêm mới phòng ban")
     @PostMapping
+    @RequiresPermission(PermissionDefine.ORGANIZATION_CREATE)
     ApiResponse<DepartmentResponse> createDepartment(@Valid @RequestBody DepartmentsRequest request);
 
     @Operation(summary = "Cập nhật phòng ban")
     @PutMapping("/{deptCode}")
+    @RequiresPermission(PermissionDefine.ORGANIZATION_UPDATE)
     ApiResponse<DepartmentResponse> updateDepartment(
             @PathVariable("deptCode") @NotBlank(message = "Mã phòng ban không được để trống") String deptCode,
             @Valid @RequestBody DepartmentsUpdateRequest request
@@ -38,12 +42,14 @@ public interface OrganizationApi {
 
     @Operation(summary = "Xóa mềm phòng ban")
     @DeleteMapping("/{deptCode}")
+    @RequiresPermission(PermissionDefine.ORGANIZATION_DELETE)
     ApiResponse<Void> deleteDepartment(
             @PathVariable("deptCode") @NotBlank(message = "Mã phòng ban không được để trống") String deptCode
     );
 
     @Operation(summary = "Lấy danh sách phòng ban")
     @GetMapping
+    @RequiresPermission(PermissionDefine.ORGANIZATION_READ)
     ApiResponse<List<DepartmentResponse>> getDepartments(
             @RequestParam(name = "search", required = false)
             @Size(max = 100, message = "Từ khóa tối đa 100 ký tự") String search,
@@ -56,6 +62,7 @@ public interface OrganizationApi {
 
     @Operation(summary = "Lấy danh sách nhân sự theo phòng ban")
     @GetMapping("/{departmentCode}/employees")
+    @RequiresPermission(PermissionDefine.ORGANIZATION_EMPLOYEES_READ)
     ApiResponse<List<EmployeeResponse>> getEmployeesByDepartment(
             @PathVariable("departmentCode") @NotBlank(message = "Mã phòng ban không được để trống") String departmentCode
     );
