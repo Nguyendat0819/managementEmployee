@@ -39,6 +39,9 @@ public class SecurityConfig {
     @Value("${app.security.enabled:true}")
     private boolean securityEnabled;
 
+    @Value("${app.cors.allowed-origin:http://localhost:4200}")
+    private String corsAllowedOrigin;
+
     // Ba endpoint auth này phải gọi được trước khi có access token hoặc khi access
     // token đã hết hạn; refresh kiểm tra refresh token, còn logout dùng token đó để revoke.
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -92,10 +95,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:4200",
-                "http://localhost:8080"
-        ));
+        configuration.setAllowedOrigins(List.of(corsAllowedOrigin));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

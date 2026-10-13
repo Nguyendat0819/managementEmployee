@@ -28,8 +28,8 @@ spring:
   #  Database (PostgreSQL) — bật khi dùng JPA
   # ============================================================
   datasource:
-    url: ${DB_URL:jdbc:postgresql://db.hyxfagucrfgjjtktmtuh.supabase.co:5432/postgres}
-    username: ${DB_USERNAME:postgres}
+    url: ${DB_URL:jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres}
+    username: ${DB_USERNAME:postgres.hyxfagucrfgjjtktmtuh}
     password: "${DB_PASSWORD:Nguyendat809@Hr}"
     driver-class-name: org.postgresql.Driver
     hikari:
@@ -123,6 +123,8 @@ springdoc:
 #  Cấu hình riêng của app
 # ============================================================
 app:
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:4200}
   # Bật/tắt Spring Security tầng filter (true ở prod; false ở local/test nếu cần)
   security:
     enabled: ${APP_SECURITY_ENABLED:true}

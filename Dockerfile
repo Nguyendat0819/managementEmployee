@@ -31,7 +31,7 @@ EXPOSE 8080
 
 # Healthcheck dùng actuator (đã có sẵn trong image)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD wget -qO- http://localhost:8080/actuator/health/liveness || exit 1
+    CMD wget -qO- http://127.0.0.1:8080/employee-service/actuator/health/liveness || exit 1
 
 ENTRYPOINT ["java", \
     "-XX:+UseContainerSupport", \

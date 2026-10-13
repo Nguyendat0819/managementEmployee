@@ -19,8 +19,8 @@ public class Employees extends BaseEntity {
     @Column(name = "employee_code", nullable = false, length = 255)
     String employeeCode;
 
-    @Column(name = "user")
-    Long user;
+    @Column(name = "user_id")
+    Long userId;
 
     @Column(name = "full_name", nullable = false, length = 200)
     String fullName;
