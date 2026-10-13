@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EmployeesRepository extends BaseRepository<Employees, Long>, EmployeeRepositoryCustom {
@@ -25,6 +26,8 @@ public interface EmployeesRepository extends BaseRepository<Employees, Long>, Em
     boolean existsByEmployeeCodeIgnoreCase(String employeeCode);
 
     boolean existsByEmployeeCodeIgnoreCaseAndIdNot(String employeeCode, Long id);
+
+    Optional<Employees> findByUserIdAndIsDeletedFalse(Long userId);
 
     @Query("""
             SELECT e FROM Employees e

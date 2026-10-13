@@ -9,6 +9,7 @@ import com.example.employee_service.feature.entity.Positions;
 import com.example.employee_service.feature.model.request.EmployeeRequest;
 import com.example.employee_service.feature.model.request.EmployeeSearchRequest;
 import com.example.employee_service.feature.model.response.EmployeeResponse;
+import com.example.employee_service.feature.model.response.EmployeeCatalogResponse;
 import com.example.employee_service.feature.repository.DepartmentsRepository;
 import com.example.employee_service.feature.repository.EmployeesRepository;
 import com.example.employee_service.feature.repository.PositionsRepository;
@@ -32,6 +33,24 @@ public class EmployeeServiceImpl implements EmployeeService {
     EmployeesRepository employeesRepository;
     DepartmentsRepository departmentsRepository;
     PositionsRepository positionsRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployeeResponse getCurrentEmployee(Long userId) {
+        Employees employee = employeesRepository.findByUserIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new BusinessException(DomainCode.NOT_FOUND, "hồ sơ nhân viên của tài khoản hiện tại"));
+        return toEmployeeResponse(employee);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployeeCatalogResponse getCatalogs() {
+        return new EmployeeCatalogResponse(
+                List.of("Nam", "Nữ", "Khác"),
+                List.of("Toàn thời gian", "Bán thời gian", "Thử việc"),
+                List.of("Đang làm việc", "Đang thử việc", "Tạm nghỉ")
+        );
+    }
 
     @Override
     @Transactional(readOnly = true)

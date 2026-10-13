@@ -3,14 +3,18 @@ package com.example.employee_service.feature.controller;
 import com.example.employee_service.common.response.ApiResponse;
 import com.example.employee_service.common.response.ApiResponseFactory;
 import com.example.employee_service.common.response.PageResponse;
+import com.example.employee_service.common.exception.BusinessException;
+import com.example.employee_service.common.response.DomainCode;
 import com.example.employee_service.feature.controller.api.EmployeeApi;
 import com.example.employee_service.feature.model.request.EmployeeSearchRequest;
+import com.example.employee_service.feature.model.response.EmployeeCatalogResponse;
 import com.example.employee_service.feature.model.response.EmployeeResponse;
 import com.example.employee_service.feature.model.request.EmployeeRequest;
 import com.example.employee_service.feature.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 
@@ -21,6 +25,16 @@ public class EmployeeController implements EmployeeApi {
 
     private final ApiResponseFactory apiResponseFactory;
     private final EmployeeService employeeService;
+
+    @Override
+    public ApiResponse<EmployeeResponse> getCurrentEmployee(Jwt jwt) {
+        return apiResponseFactory.success(employeeService.getCurrentEmployee(resolveUserId(jwt)));
+    }
+
+    @Override
+    public ApiResponse<EmployeeCatalogResponse> getCatalogs() {
+        return apiResponseFactory.success(employeeService.getCatalogs());
+    }
 
     @Override
     public ApiResponse<List<EmployeeResponse>> getEmployees(String search, String departmentCode, String positionCode, String status, String employmentType) {
@@ -53,8 +67,14 @@ public class EmployeeController implements EmployeeApi {
         return apiResponseFactory.success();
     }
 
-    @Override
-    public ApiResponse<String> test() {
-        return apiResponseFactory.success("Employee controller is up and running");
+    private Long resolveUserId(Jwt jwt) {
+        if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
+            throw new BusinessException(DomainCode.UNAUTHORIZED);
+        }
+        try {
+            return Long.valueOf(jwt.getSubject());
+        } catch (NumberFormatException exception) {
+            throw new BusinessException(DomainCode.UNAUTHORIZED);
+        }
     }
 }

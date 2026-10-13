@@ -6,8 +6,12 @@ import com.example.employee_service.common.security.RequiresPermission;
 import com.example.employee_service.feature.constant.PermissionDefine;
 import com.example.employee_service.feature.model.request.EmployeeSearchRequest;
 import com.example.employee_service.feature.model.response.EmployeeResponse;
+import com.example.employee_service.feature.model.response.EmployeeCatalogResponse;
 import com.example.employee_service.feature.model.request.EmployeeRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -23,6 +27,16 @@ import java.util.List;
 
 @RequestMapping("/api/employee")
 public interface EmployeeApi {
+    @Operation(summary = "Lấy hồ sơ nhân viên hiện tại")
+    @GetMapping({"/me", "/profile-me"})
+    ApiResponse<EmployeeResponse> getCurrentEmployee(
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt);
+
+    @Operation(summary = "Lấy danh mục dùng cho form nhân viên")
+    @GetMapping("/catalogs")
+    @RequiresPermission(PermissionDefine.EMPLOYEE_READ)
+    ApiResponse<EmployeeCatalogResponse> getCatalogs();
+
     @Operation(summary = "Lấy danh sách nhân viên")
     @GetMapping
     @RequiresPermission(PermissionDefine.EMPLOYEE_READ)
@@ -40,7 +54,7 @@ public interface EmployeeApi {
             @Valid @RequestBody EmployeeSearchRequest request);
 
     @Operation(summary = "Xem chi tiết nhân viên")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     @RequiresPermission(PermissionDefine.EMPLOYEE_READ)
     ApiResponse<EmployeeResponse> getEmployee(@PathVariable Long id);
 
@@ -50,16 +64,13 @@ public interface EmployeeApi {
     ApiResponse<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest request);
 
     @Operation(summary = "Sửa nhân viên")
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     @RequiresPermission(PermissionDefine.EMPLOYEE_UPDATE)
     ApiResponse<EmployeeResponse> updateEmployee(@PathVariable Long id, @Valid @RequestBody EmployeeRequest request);
 
     @Operation(summary = "Xóa mềm nhân viên")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     @RequiresPermission(PermissionDefine.EMPLOYEE_DELETE)
     ApiResponse<Void> deleteEmployee(@PathVariable Long id);
 
-    @GetMapping("/test")
-    @RequiresPermission(PermissionDefine.EMPLOYEE_READ)
-    ApiResponse<String> test();
 }
