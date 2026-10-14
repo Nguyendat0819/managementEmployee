@@ -17,10 +17,14 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,15 +48,70 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
+    @Transactional
     public DepartmentResponse updateDepartment(String deptCode, DepartmentsUpdateRequest request){
 //        Kiểm tra department
         Departments departments = departmentsRepository.findByDeptCodeAndIsDeleted(deptCode, Const.IN_DELETED);
         if(departments == null) {
             throw new BusinessException(DomainCode.NOT_FOUND, deptCode);
         }
-        Departments updateDepartments = departMapper.updateEntity(request, departments);
-        departmentsRepository.save(updateDepartments);
+        String parentCode = normalize(request.getParentCode());
+        String headCode = normalize(request.getHeadCode());
+        Departments parent = parentCode == null ? null : departmentsRepository.findByDeptCodeAndIsDeleted(parentCode, false);
+        if (parentCode != null && parent == null) {
+            throw new BusinessException(DomainCode.NOT_FOUND, "đơn vị cha " + parentCode);
+        }
+        validateParentChange(departments, parent);
+        if (headCode != null && employeesRepository.findByEmployeeCodeIgnoreCaseAndIsDeletedFalse(headCode).isEmpty()) {
+            throw new BusinessException(DomainCode.NOT_FOUND, "nhân viên phụ trách " + headCode);
+        }
+
+        departments.setName(request.getName().trim());
+        departments.setParentCode(parentCode);
+        departments.setHeadCode(headCode);
+        departments.setLevel(parent == null ? (short) 1 : (short) (parent.getLevel() + 1));
+        List<Departments> changedDepartments = updateDescendantLevels(departments);
+        Departments updateDepartments = departmentsRepository.save(departments);
+        departmentsRepository.saveAll(changedDepartments);
         return toDepartmentResponse(updateDepartments, 0);
+    }
+
+    private void validateParentChange(Departments department, Departments parent) {
+        Set<String> visited = new HashSet<>();
+        Departments current = parent;
+        while (current != null && visited.add(current.getDeptCode())) {
+            if (current.getDeptCode().equals(department.getDeptCode())) {
+                throw new BusinessException(DomainCode.VALIDATION_ERROR, "đơn vị cha không thể là chính nó hoặc đơn vị con");
+            }
+            current = current.getParentCode() == null
+                    ? null
+                    : departmentsRepository.findByDeptCodeAndIsDeleted(current.getParentCode(), false);
+        }
+    }
+
+    private List<Departments> updateDescendantLevels(Departments department) {
+        List<Departments> activeDepartments = departmentsRepository.findAllByIsDeletedFalseOrderByLevelAscNameAsc();
+        List<Departments> changed = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        visited.add(department.getDeptCode());
+        List<Departments> parents = List.of(department);
+        while (!parents.isEmpty()) {
+            List<Departments> children = new ArrayList<>();
+            for (Departments parent : parents) {
+                for (Departments candidate : activeDepartments) {
+                    if (!parent.getDeptCode().equals(candidate.getParentCode()) || !visited.add(candidate.getDeptCode())) continue;
+                    candidate.setLevel((short) (parent.getLevel() + 1));
+                    changed.add(candidate);
+                    children.add(candidate);
+                }
+            }
+            parents = children;
+        }
+        return changed;
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     @Override

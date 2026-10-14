@@ -1,7 +1,6 @@
 package com.example.employee_service.feature.model.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -11,6 +10,9 @@ public class DepartmentsUpdateRequest {
     @Size(max = 200)
     private String name;
 
-    @NotNull(message = "Level không được để trống")
-    private Short level;
+    @Size(max = 255)
+    private String parentCode;
+
+    @Size(max = 255)
+    private String headCode;
 }
