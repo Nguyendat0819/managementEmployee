@@ -34,7 +34,8 @@ public class GlobalExceptionHandler  {
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<?> handleBusiness(BaseException e){
         log.warn("handleBusiness:{}",e.getMessage());
-        ApiResponse<?> body = apiResponseFactory.error(e.getDomainCode(), e.getMessage());
+        // BaseException đã giữ sẵn args; truyền lại args để template chỉ được format một lần.
+        ApiResponse<?> body = apiResponseFactory.error(e.getDomainCode(), e.getArgs());
         return ResponseEntity
                 .status(e.getDomainCode().getHttpStatus())
                 .body(body);

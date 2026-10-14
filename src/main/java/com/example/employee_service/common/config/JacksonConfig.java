@@ -16,6 +16,7 @@ import tools.jackson.databind.module.SimpleModule;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 /**
  * Cấu hình Jackson logic-level: trim chuỗi (+ "" -> null) và format ngày giờ cố định.
@@ -26,7 +27,11 @@ import java.time.format.DateTimeFormatter;
 @Configuration
 public class JacksonConfig {
 
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter INPUT_DATE = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
+            .toFormatter();
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /** Spring Boot tự nạp mọi bean {@link JacksonModule} vào {@code ObjectMapper}. */
@@ -51,7 +56,7 @@ public class JacksonConfig {
         module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DATE_TIME));
 
         module.addSerializer(LocalDate.class, new LocalDateSerializer(DATE));
-        module.addDeserializer(LocalDate.class, new LocalDateDeserializer(DATE));
+        module.addDeserializer(LocalDate.class, new LocalDateDeserializer(INPUT_DATE));
 
         return module;
     }

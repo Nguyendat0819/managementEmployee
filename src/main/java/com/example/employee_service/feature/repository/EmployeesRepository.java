@@ -27,6 +27,8 @@ public interface EmployeesRepository extends BaseRepository<Employees, Long>, Em
 
     boolean existsByEmployeeCodeIgnoreCaseAndIdNot(String employeeCode, Long id);
 
+    Optional<Employees> findByEmployeeCodeIgnoreCaseAndIsDeletedFalse(String employeeCode);
+
     Optional<Employees> findByUserIdAndIsDeletedFalse(Long userId);
 
     @Query("""

@@ -22,6 +22,12 @@ public final class PermissionDefine {
     public static final String EMPLOYEE_UPDATE = "employee:employee:update";
     public static final String EMPLOYEE_DELETE = "employee:employee:delete";
 
+    public static final String CONTRACT_READ = "employee:contract:read";
+    public static final String CONTRACT_SEARCH = "employee:contract:search";
+    public static final String CONTRACT_CREATE = "employee:contract:create";
+    public static final String CONTRACT_UPDATE = "employee:contract:update";
+    public static final String CONTRACT_DELETE = "employee:contract:delete";
+
     public static final String ORGANIZATION_READ = "employee:organization:read";
     public static final String ORGANIZATION_CREATE = "employee:organization:create";
     public static final String ORGANIZATION_UPDATE = "employee:organization:update";
