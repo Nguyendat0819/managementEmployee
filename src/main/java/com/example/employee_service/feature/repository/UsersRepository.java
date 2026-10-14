@@ -12,6 +12,8 @@ public interface UsersRepository extends BaseRepository<Users, Long> {
 
     List<Users> findAllByIsDeletedFalse();
 
+    List<Users> findAllByEmailIgnoreCaseAndIsDeletedFalse(String email);
+
     Users findUserByUserName(String userName);
 
     Users findByUserNameAndIsDeletedFalse(String userName);

@@ -6,6 +6,7 @@ import com.example.employee_service.common.response.PageResponse;
 import com.example.employee_service.feature.entity.Departments;
 import com.example.employee_service.feature.entity.Employees;
 import com.example.employee_service.feature.entity.Positions;
+import com.example.employee_service.feature.entity.Users;
 import com.example.employee_service.feature.model.request.EmployeeRequest;
 import com.example.employee_service.feature.model.request.EmployeeSearchRequest;
 import com.example.employee_service.feature.model.response.EmployeeResponse;
@@ -13,6 +14,7 @@ import com.example.employee_service.feature.model.response.EmployeeCatalogRespon
 import com.example.employee_service.feature.repository.DepartmentsRepository;
 import com.example.employee_service.feature.repository.EmployeesRepository;
 import com.example.employee_service.feature.repository.PositionsRepository;
+import com.example.employee_service.feature.repository.UsersRepository;
 import com.example.employee_service.feature.service.EmployeeService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -33,13 +35,12 @@ public class EmployeeServiceImpl implements EmployeeService {
     EmployeesRepository employeesRepository;
     DepartmentsRepository departmentsRepository;
     PositionsRepository positionsRepository;
+    UsersRepository usersRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public EmployeeResponse getCurrentEmployee(Long userId) {
-        Employees employee = employeesRepository.findByUserIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new BusinessException(DomainCode.NOT_FOUND, "hồ sơ nhân viên của tài khoản hiện tại"));
-        return toEmployeeResponse(employee);
+    public EmployeeResponse getCurrentEmployee(Long userId, String email) {
+        return toEmployeeResponse(currentEmployee(userId, email));
     }
 
     @Override
@@ -91,6 +92,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         validateReferences(request);
         Employees employee = new Employees();
         applyRequest(employee, request);
+        linkLoginAccount(employee);
         employee.setIsDeleted(false);
         return toEmployeeResponse(employeesRepository.save(employee));
     }
@@ -105,6 +107,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         validateReferences(request);
         applyRequest(employee, request);
+        linkLoginAccount(employee);
         return toEmployeeResponse(employeesRepository.save(employee));
     }
 
@@ -121,6 +124,27 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employeesRepository.findById(id)
                 .filter(employee -> !Boolean.TRUE.equals(employee.getIsDeleted()))
                 .orElseThrow(() -> new BusinessException(DomainCode.NOT_FOUND, "nhân viên " + id));
+    }
+
+    private Employees currentEmployee(Long userId, String email) {
+        Employees employee = employeesRepository.findByUserIdAndIsDeletedFalse(userId).orElse(null);
+        if (employee != null) {
+            return employee;
+        }
+        if (email != null && !email.isBlank()) {
+            // Email fallback only covers legacy unlinked rows; it must not cross an existing user_id link.
+            List<Employees> matches = employeesRepository.findAllByEmailIgnoreCaseAndIsDeletedFalse(email.trim())
+                    .stream()
+                    .filter(candidate -> candidate.getUserId() == null || candidate.getUserId().equals(userId))
+                    .toList();
+            if (matches.size() == 1) {
+                return matches.get(0);
+            }
+            if (matches.size() > 1) {
+                throw new BusinessException(DomainCode.CONFLICT, "email được dùng bởi nhiều hồ sơ nhân viên");
+            }
+        }
+        throw new BusinessException(DomainCode.NOT_FOUND, "hồ sơ nhân viên của tài khoản hiện tại");
     }
 
     private void validateReferences(EmployeeRequest request) {
@@ -149,6 +173,26 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setHireDate(request.getHireDate());
         employee.setContractEnd(request.getContractEnd());
         employee.setStatus(request.getStatus().trim());
+    }
+
+    private void linkLoginAccount(Employees employee) {
+        if (employee.getUserId() != null || employee.getEmail() == null || employee.getEmail().isBlank()) {
+            return;
+        }
+
+        List<Users> accounts = usersRepository.findAllByEmailIgnoreCaseAndIsDeletedFalse(employee.getEmail().trim());
+        if (accounts.size() > 1) {
+            throw new BusinessException(DomainCode.CONFLICT, "email được dùng bởi nhiều tài khoản");
+        }
+        if (accounts.isEmpty()) {
+            return;
+        }
+
+        Users account = accounts.get(0);
+        if (employeesRepository.findByUserIdAndIsDeletedFalse(account.getId()).isPresent()) {
+            throw new BusinessException(DomainCode.CONFLICT, "tài khoản đã được liên kết với hồ sơ nhân viên khác");
+        }
+        employee.setUserId(account.getId());
     }
 
     private String normalize(String value) {

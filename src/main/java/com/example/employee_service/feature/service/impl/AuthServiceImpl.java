@@ -5,6 +5,7 @@ import com.example.employee_service.common.exception.BusinessException;
 import com.example.employee_service.common.response.DomainCode;
 import com.example.employee_service.common.util.Const;
 import com.example.employee_service.feature.entity.Users;
+import com.example.employee_service.feature.entity.Employees;
 import com.example.employee_service.feature.model.request.LoginRequest;
 import com.example.employee_service.feature.model.request.RefreshTokenRequest;
 import com.example.employee_service.feature.model.request.UserCreateRequest;
@@ -12,6 +13,7 @@ import com.example.employee_service.feature.model.response.AuthResponse;
 import com.example.employee_service.feature.model.response.TokenResponse;
 import com.example.employee_service.feature.model.response.UserResponse;
 import com.example.employee_service.feature.repository.UsersRepository;
+import com.example.employee_service.feature.repository.EmployeesRepository;
 import com.example.employee_service.feature.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -24,6 +26,7 @@ import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -39,6 +42,7 @@ import static com.example.employee_service.common.util.Const.IS_ACTIVE;
 public class AuthServiceImpl implements AuthService {
 
     private final UsersRepository usersRepository;
+    private final EmployeesRepository employeesRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
@@ -175,6 +179,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public UserResponse create(UserCreateRequest request){
         // Tạo entity từ request tại service để áp dụng các giá trị mặc định trước khi lưu:
         // role USER khi thiếu role, trạng thái active và bản ghi chưa bị soft-delete.
@@ -190,6 +195,20 @@ public class AuthServiceImpl implements AuthService {
         // Repository chịu trách nhiệm persist entity; sau khi save, dữ liệu được map
         // thành UserResponse để trả về lớp controller.
         Users saved = usersRepository.save(user);
+
+        List<Employees> employees = employeesRepository.findAllByEmailIgnoreCaseAndIsDeletedFalse(saved.getEmail());
+        if (employees.size() > 1) {
+            throw new BusinessException(DomainCode.CONFLICT, "email được dùng bởi nhiều hồ sơ nhân viên");
+        }
+        if (!employees.isEmpty()) {
+            Employees employee = employees.get(0);
+            if (employee.getUserId() != null || employeesRepository.findByUserIdAndIsDeletedFalse(saved.getId()).isPresent()) {
+                throw new BusinessException(DomainCode.CONFLICT, "hồ sơ nhân viên đã được liên kết với tài khoản khác");
+            }
+            // Email chỉ dùng để tạo liên kết ban đầu; các lần đọc hồ sơ sau đó dựa trên subject ổn định của JWT.
+            employee.setUserId(saved.getId());
+            employeesRepository.save(employee);
+        }
 
         // Response chỉ chứa thông tin user cần công khai, không chứa passwordHash.
         return buildUser(saved);

@@ -11,6 +11,8 @@ public interface EmployeeContractService {
 
     EmployeeContractResponse getContract(Long id);
 
+    EmployeeContractResponse getCurrentContract(Long userId, String email);
+
     EmployeeContractResponse createContract(EmployeeContractCreateRequest request);
 
     EmployeeContractResponse updateContract(Long id, EmployeeContractUpdateRequest request);

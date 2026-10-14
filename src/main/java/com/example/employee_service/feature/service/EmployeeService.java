@@ -9,7 +9,7 @@ import com.example.employee_service.feature.model.request.EmployeeRequest;
 import java.util.List;
 
 public interface EmployeeService {
-    EmployeeResponse getCurrentEmployee(Long userId);
+    EmployeeResponse getCurrentEmployee(Long userId, String email);
     EmployeeCatalogResponse getCatalogs();
     List<EmployeeResponse> getEmployees(String search, String departmentCode, String positionCode, String status, String employmentType);
     PageResponse<EmployeeResponse> searchEmployees(EmployeeSearchRequest request);

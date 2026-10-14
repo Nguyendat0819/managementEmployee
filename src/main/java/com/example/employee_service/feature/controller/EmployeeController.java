@@ -28,7 +28,7 @@ public class EmployeeController implements EmployeeApi {
 
     @Override
     public ApiResponse<EmployeeResponse> getCurrentEmployee(Jwt jwt) {
-        return apiResponseFactory.success(employeeService.getCurrentEmployee(resolveUserId(jwt)));
+        return apiResponseFactory.success(employeeService.getCurrentEmployee(resolveUserId(jwt), jwt.getClaimAsString("email")));
     }
 
     @Override

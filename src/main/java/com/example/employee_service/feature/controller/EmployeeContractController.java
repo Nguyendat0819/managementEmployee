@@ -2,6 +2,8 @@ package com.example.employee_service.feature.controller;
 
 import com.example.employee_service.common.response.ApiResponse;
 import com.example.employee_service.common.response.ApiResponseFactory;
+import com.example.employee_service.common.exception.BusinessException;
+import com.example.employee_service.common.response.DomainCode;
 import com.example.employee_service.common.response.PageResponse;
 import com.example.employee_service.feature.controller.api.EmployeeContractApi;
 import com.example.employee_service.feature.model.request.EmployeeContractCreateRequest;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,6 +26,11 @@ public class EmployeeContractController implements EmployeeContractApi {
 
     EmployeeContractService contractService;
     ApiResponseFactory apiResponseFactory;
+
+    @Override
+    public ApiResponse<EmployeeContractResponse> getCurrentContract(Jwt jwt) {
+        return apiResponseFactory.success(contractService.getCurrentContract(resolveUserId(jwt), jwt.getClaimAsString("email")));
+    }
 
     @Override
     public ApiResponse<PageResponse<EmployeeContractResponse>> searchContracts(EmployeeContractSearchRequest request) {
@@ -48,5 +56,16 @@ public class EmployeeContractController implements EmployeeContractApi {
     public ApiResponse<Void> deleteContract(Long id) {
         contractService.deleteContract(id);
         return apiResponseFactory.success();
+    }
+
+    private Long resolveUserId(Jwt jwt) {
+        if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
+            throw new BusinessException(DomainCode.UNAUTHORIZED);
+        }
+        try {
+            return Long.valueOf(jwt.getSubject());
+        } catch (NumberFormatException exception) {
+            throw new BusinessException(DomainCode.UNAUTHORIZED);
+        }
     }
 }

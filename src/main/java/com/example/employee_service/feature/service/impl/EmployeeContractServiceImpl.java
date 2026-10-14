@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +56,35 @@ public class EmployeeContractServiceImpl implements EmployeeContractService {
     @Transactional(readOnly = true)
     public EmployeeContractResponse getContract(Long id) {
         return toResponse(activeContract(id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployeeContractResponse getCurrentContract(Long userId, String email) {
+        Employees employee = employeesRepository.findByUserIdAndIsDeletedFalse(userId).orElse(null);
+        if (employee == null && email != null && !email.isBlank()) {
+            List<Employees> matches = employeesRepository.findAllByEmailIgnoreCaseAndIsDeletedFalse(email.trim())
+                    .stream()
+                    .filter(candidate -> candidate.getUserId() == null || candidate.getUserId().equals(userId))
+                    .toList();
+            if (matches.size() > 1) {
+                throw new BusinessException(DomainCode.CONFLICT, "email được dùng bởi nhiều hồ sơ nhân viên");
+            }
+            employee = matches.stream().findFirst()
+                    .orElseThrow(() -> new BusinessException(DomainCode.NOT_FOUND, "hồ sơ nhân viên của tài khoản hiện tại"));
+        }
+        if (employee == null) {
+            throw new BusinessException(DomainCode.NOT_FOUND, "hồ sơ nhân viên của tài khoản hiện tại");
+        }
+        LocalDate today = LocalDate.now();
+        return contractsRepository
+                .findAllByEmployeeCodeIgnoreCaseAndIsDeletedFalseOrderByStartDateDescIdDesc(employee.getEmployeeCode())
+                .stream()
+                .filter(contract -> !contract.getStartDate().isAfter(today))
+                .filter(contract -> contract.getEndDate() == null || !contract.getEndDate().isBefore(today))
+                .findFirst()
+                .map(this::toResponse)
+                .orElse(null);
     }
 
     @Override

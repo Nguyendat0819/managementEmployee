@@ -6,6 +6,7 @@ import com.example.employee_service.feature.repository.custom.EmployeeContractRe
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface EmployeeContractsRepository extends BaseRepository<EmployeeContracts, Long>, EmployeeContractRepositoryCustom {
@@ -15,4 +16,6 @@ public interface EmployeeContractsRepository extends BaseRepository<EmployeeCont
     boolean existsByContractNoIgnoreCaseAndIdNot(String contractNo, Long id);
 
     Optional<EmployeeContracts> findByIdAndIsDeletedFalse(Long id);
+
+    List<EmployeeContracts> findAllByEmployeeCodeIgnoreCaseAndIsDeletedFalseOrderByStartDateDescIdDesc(String employeeCode);
 }
