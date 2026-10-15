@@ -12,9 +12,12 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
-@Table(name = "attendance_records", schema = "hr_service")
+@Table(name = "attendance_records", schema = "hr_service",
+        uniqueConstraints = @jakarta.persistence.UniqueConstraint(
+                name = "uk_attendance_employee_date", columnNames = {"employee_code", "recorded_at"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,6 +26,24 @@ public class AttendanceRecord extends BaseEntity {
 
     @Column(name = "employee_code", nullable = false, length = 50)
     String employeeCode;
+
+    @Column(name = "shift_id")
+    Long shiftId;
+
+    @Column(name = "shift_name", length = 100)
+    String shiftName;
+
+    @Column(name = "scheduled_start_time")
+    LocalTime scheduledStartTime;
+
+    @Column(name = "scheduled_end_time")
+    LocalTime scheduledEndTime;
+
+    @Column(name = "late_minutes")
+    Integer lateMinutes;
+
+    @Column(name = "early_minutes")
+    Integer earlyMinutes;
 
     @Column(name = "check_in")
     LocalDateTime checkIn;

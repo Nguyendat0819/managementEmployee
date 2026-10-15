@@ -7,7 +7,10 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+import java.util.List;
 import java.time.LocalTime;
 
 @Entity
@@ -25,9 +28,10 @@ public class Shift extends BaseEntity {
     @Column(name = "end_time", nullable = false)
     LocalTime endTime;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "day_of_week", nullable = false, columnDefinition = "jsonb")
-    String dayOfWeek;
+    List<String> dayOfWeek;
 
     @Column(name = "is_deleted", nullable = false)
-    Boolean isDeleted;
+    Boolean isDeleted = false;
 }

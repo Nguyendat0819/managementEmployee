@@ -2,6 +2,7 @@ package com.example.attendance_service.feature.controller;
 
 import com.example.attendance_service.common.response.ApiResponse;
 import com.example.attendance_service.common.response.ApiResponseFactory;
+import com.example.attendance_service.common.response.PageResponse;
 import com.example.attendance_service.feature.controller.api.AttendanceApi;
 import com.example.attendance_service.feature.model.request.CheckInRequest;
 import com.example.attendance_service.feature.model.request.CheckOutRequest;
@@ -34,5 +35,12 @@ public class AttendanceController implements AttendanceApi {
     @Override
     public ApiResponse<List<AttendanceResponse>> history(String employeeCode, LocalDate from, LocalDate to) {
         return responseFactory.success(attendanceService.history(employeeCode, from, to));
+    }
+
+    @Override
+    public ApiResponse<PageResponse<AttendanceResponse>> search(LocalDate from, LocalDate to,
+                                                                 String employeeCode, String status,
+                                                                 int page, int size) {
+        return responseFactory.success(attendanceService.search(from, to, employeeCode, status, page, size));
     }
 }

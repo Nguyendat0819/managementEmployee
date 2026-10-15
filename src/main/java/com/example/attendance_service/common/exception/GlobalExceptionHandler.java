@@ -8,6 +8,7 @@ import jakarta.validation.ConstraintDeclarationException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -95,7 +96,7 @@ public class GlobalExceptionHandler  {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleAll(Exception e){
-        log.error("handleAll:{}",e.getMessage());
+        log.error("Unhandled request failure requestId={}", MDC.get("requestId"), e);
         ApiResponse<?> body = environment.matchesProfiles("prod") // khi dùng tron môi trường product
                 ? apiResponseFactory.error(DomainCode.INTERNAL_ERROR) // trả về lỗi hệ thống tránh rò gỉ dữ liệu
                 : apiResponseFactory.of(DomainCode.INTERNAL_ERROR,rootCause(e),(Object) null);
