@@ -23,6 +23,15 @@ public class PayrollRun extends BaseEntity {
     @Column(name = "period_month", nullable = false)
     Integer periodMonth;
 
+    @Column(name = "salary_structure_label", length = 100)
+    String salaryStructureLabel;
+
+    @Column(name = "employee_count")
+    Integer employeeCount;
+
+    @Column(name = "note", length = 500)
+    String note;
+
     @Column(name = "status", nullable = false, length = 50)
     String status;
 

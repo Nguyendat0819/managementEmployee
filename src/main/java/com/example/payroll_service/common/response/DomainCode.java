@@ -23,25 +23,25 @@ import org.springframework.http.HttpStatus;
 public enum DomainCode {
 
     //  Success
-    SUCCESS("EMP-000", HttpStatus.OK, "Thành công"),
+    SUCCESS("PAY-000", HttpStatus.OK, "Thành công"),
 
     //  Lỗi client (4xx)
-    BAD_REQUEST("EMP-400", HttpStatus.BAD_REQUEST, "Yêu cầu không hợp lệ"),
-    UNAUTHORIZED("EMP-401", HttpStatus.UNAUTHORIZED, "Chưa xác thực"),
-    INVALID_PARAMETER("EMP-402", HttpStatus.BAD_REQUEST, "Tham số không hợp lệ: {}"),
-    FORBIDDEN("EMP-403", HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện thao tác này"),
-    NOT_FOUND("EMP-404", HttpStatus.NOT_FOUND, "Không tìm thấy: {}"),
-    VALIDATION_ERROR("EMP-405", HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ: {}"),
-    TOKEN_EXPIRED("EMP-406", HttpStatus.UNAUTHORIZED, "Phiên đăng nhập đã hết hạn"),
-    CONFLICT("EMP-407", HttpStatus.CONFLICT, "Dữ liệu đã tồn tại hoặc đang xung đột: {}"),
+    BAD_REQUEST("PAY-400", HttpStatus.BAD_REQUEST, "Yêu cầu không hợp lệ"),
+    UNAUTHORIZED("PAY-401", HttpStatus.UNAUTHORIZED, "Chưa xác thực"),
+    INVALID_PARAMETER("PAY-402", HttpStatus.BAD_REQUEST, "Tham số không hợp lệ: {}"),
+    FORBIDDEN("PAY-403", HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện thao tác này"),
+    NOT_FOUND("PAY-404", HttpStatus.NOT_FOUND, "Không tìm thấy: {}"),
+    VALIDATION_ERROR("PAY-405", HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ: {}"),
+    TOKEN_EXPIRED("PAY-406", HttpStatus.UNAUTHORIZED, "Phiên đăng nhập đã hết hạn"),
+    CONFLICT("PAY-407", HttpStatus.CONFLICT, "Dữ liệu đã tồn tại hoặc đang xung đột: {}"),
 
     //  Lỗi server / service ngoài (5xx)
-    INTERNAL_ERROR("EMP-500", HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống, vui lòng thử lại sau"),
-    EXTERNAL_SERVICE_ERROR("EMP-502", HttpStatus.BAD_GATEWAY, "Lỗi khi gọi dịch vụ ngoài: {}"),
-    SERVICE_UNAVAILABLE("EMP-503", HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ tạm thời không khả dụng");
+    INTERNAL_ERROR("PAY-500", HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống, vui lòng thử lại sau"),
+    EXTERNAL_SERVICE_ERROR("PAY-502", HttpStatus.BAD_GATEWAY, "Lỗi khi gọi dịch vụ ngoài: {}"),
+    SERVICE_UNAVAILABLE("PAY-503", HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ tạm thời không khả dụng");
 
     //  Mã nghiệp vụ riêng (thêm theo service)
-    // Ví dụ: EMPLOYEE_NOT_FOUND("EMP-1001", HttpStatus.NOT_FOUND, "Không tìm thấy employee id {}"),
+    // Ví dụ: PAYROLL_NOT_FOUND("PAY-1001", HttpStatus.NOT_FOUND, "Không tìm thấy kỳ lương {}"),
 
     String code;
     HttpStatus httpStatus;

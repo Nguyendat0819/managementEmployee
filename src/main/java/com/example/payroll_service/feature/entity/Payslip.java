@@ -1,12 +1,15 @@
 package com.example.payroll_service.feature.entity;
 
 import com.example.payroll_service.common.persistence.dto.BaseEntity;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 
@@ -62,5 +65,6 @@ public class Payslip extends BaseEntity {
     BigDecimal overtimeHours;
 
     @Column(name = "snapshot_data", nullable = false, columnDefinition = "jsonb")
-    String snapshotData;
+    @JdbcTypeCode(SqlTypes.JSON)
+    JsonNode snapshotData;
 }
