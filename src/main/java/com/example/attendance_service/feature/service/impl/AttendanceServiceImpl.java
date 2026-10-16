@@ -110,7 +110,11 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (page < 0 || size < 1 || size > 200) {
             throw new BusinessException(DomainCode.INVALID_PARAMETER, "page/size");
         }
-        return PageResponse.of(repository.search(from, to, employeeCode, status,
+        String normalizedEmployeeCode = employeeCode == null
+                ? ""
+                : employeeCode.trim().toLowerCase(Locale.ROOT);
+        String normalizedStatus = status == null ? "" : status.trim();
+        return PageResponse.of(repository.search(from, to, normalizedEmployeeCode, normalizedStatus,
                 PageRequest.of(page, size, Sort.unsorted())).map(AttendanceResponse::from));
     }
 

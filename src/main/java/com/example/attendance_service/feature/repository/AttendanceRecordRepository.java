@@ -22,8 +22,8 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     @Query("""
             select a from AttendanceRecord a
             where a.recordedAt between :from and :to
-              and (:employeeCode is null or lower(a.employeeCode) like lower(concat('%', :employeeCode, '%')))
-              and (:status is null or a.status = :status)
+              and (:employeeCode = '' or lower(a.employeeCode) like concat('%', :employeeCode, '%'))
+              and (:status = '' or a.status = :status)
             order by a.recordedAt desc, a.checkIn desc
             """)
     Page<AttendanceRecord> search(@Param("from") LocalDate from,
