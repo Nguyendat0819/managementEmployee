@@ -123,6 +123,9 @@ springdoc:
 #  Cấu hình riêng của app
 # ============================================================
 app:
+  payroll:
+    unemployment-region-minimum-2026: ${PAYROLL_BHTN_REGION_MINIMUM_2026:5310000}
+    unemployment-region-minimum-2024-2025: ${PAYROLL_BHTN_REGION_MINIMUM_2024_2025:4960000}
   # Bật/tắt Spring Security tầng filter (true ở prod; false ở local/test nếu cần)
   security:
     enabled: ${APP_SECURITY_ENABLED:true}
@@ -139,7 +142,7 @@ app:
   # HttpClient cho group "internal" (cổng gateway nội bộ)
   internal:
     enabled: true
-    base-url: ${INTERNAL_BASE_URL:http://localhost:9999}
+    base-url: ${INTERNAL_BASE_URL:http://localhost:8088}
 
   jwt:
     secret: ${APP_JWT_SECRET}

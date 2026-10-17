@@ -4,6 +4,7 @@ import com.example.payroll_service.feature.model.request.PayrollRunRequest;
 import com.example.payroll_service.feature.model.request.PayslipLineRequest;
 import com.example.payroll_service.feature.model.response.PayrollRunResponse;
 import com.example.payroll_service.feature.model.response.PayslipResponse;
+import com.example.payroll_service.feature.model.response.PayrollCalculationResponse;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ public interface PayrollRunService {
     List<PayslipResponse> addPayslips(Long runId, List<PayslipLineRequest> entries);
 
     List<PayslipResponse> getPayslips(Long runId);
+
+    PayrollCalculationResponse calculate(Long runId);
 
     PayrollRunResponse submitForApproval(Long id);
 

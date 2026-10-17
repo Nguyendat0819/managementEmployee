@@ -41,6 +41,9 @@ public class PayrollRun extends BaseEntity {
     @Column(name = "total_net")
     BigDecimal totalNet;
 
+    @Column(name = "total_employer_cost")
+    BigDecimal totalEmployerCost;
+
     @Column(name = "created_by_employee_code", length = 255)
     String createdByEmployeeCode;
 

@@ -18,6 +18,7 @@ public record PayslipLineRequest(
         @NotNull @DecimalMin("0.00") BigDecimal bonus,
         @NotNull @DecimalMin("0.00") BigDecimal socialInsurance,
         @NotNull @DecimalMin("0.00") BigDecimal healthInsurance,
+        @NotNull @DecimalMin("0.00") BigDecimal unemploymentInsurance,
         @NotNull @DecimalMin("0.00") BigDecimal pitDeduction,
         @NotNull @DecimalMin("0.00") BigDecimal otherDeduction,
         @NotNull @Min(0) @Max(31) Short workingDays,

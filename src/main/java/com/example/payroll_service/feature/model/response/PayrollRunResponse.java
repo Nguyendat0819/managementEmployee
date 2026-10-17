@@ -13,6 +13,7 @@ public record PayrollRunResponse(
         BigDecimal totalGross,
         BigDecimal totalDeduction,
         BigDecimal totalNet,
+        BigDecimal totalEmployerCost,
         String status,
         LocalDateTime createdAt,
         String approvedBy,

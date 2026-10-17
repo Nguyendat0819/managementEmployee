@@ -6,6 +6,7 @@ import com.example.payroll_service.feature.model.request.PayrollRunRequest;
 import com.example.payroll_service.feature.model.request.PayslipBatchRequest;
 import com.example.payroll_service.feature.model.response.PayrollRunResponse;
 import com.example.payroll_service.feature.model.response.PayslipResponse;
+import com.example.payroll_service.feature.model.response.PayrollCalculationResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +42,10 @@ public interface PayrollRunApi {
     @GetMapping("/{id}/payslips")
     @RequiresPermission("employee:payroll:manage")
     ApiResponse<List<PayslipResponse>> getPayslips(@PathVariable Long id);
+
+    @PostMapping("/{id}/calculate")
+    @RequiresPermission("employee:payroll:manage")
+    ApiResponse<PayrollCalculationResponse> calculate(@PathVariable Long id);
 
     @PostMapping("/{id}/submit")
     @RequiresPermission("employee:payroll:manage")

@@ -84,8 +84,12 @@ public class PayslipQueryServiceImpl implements PayslipQueryService {
         BigDecimal gross = zeroIfNull(slip.getGrossSalary());
         BigDecimal deductions = zeroIfNull(slip.getSocialInsurance())
                 .add(zeroIfNull(slip.getHealthInsurance()))
+                .add(zeroIfNull(slip.getUnemploymentInsurance()))
                 .add(zeroIfNull(slip.getPitDeduction()))
                 .add(zeroIfNull(slip.getOtherDeduction()));
+        BigDecimal employerInsuranceTotal = zeroIfNull(slip.getEmployerSocialInsurance())
+                .add(zeroIfNull(slip.getEmployerHealthInsurance()))
+                .add(zeroIfNull(slip.getEmployerUnemploymentInsurance()));
         java.time.LocalDate periodStart = java.time.LocalDate.of(run.getPeriodYear(), run.getPeriodMonth(), 1);
         java.time.LocalDate periodEnd = periodStart.withDayOfMonth(periodStart.lengthOfMonth());
         return new PayslipResponse(
@@ -94,8 +98,11 @@ public class PayslipQueryServiceImpl implements PayslipQueryService {
                 zeroIfNull(slip.getBaseSalary()), zeroIfNull(slip.getTotalAllowance()),
                 zeroIfNull(slip.getOvertimePay()), zeroIfNull(slip.getBonus()), gross,
                 zeroIfNull(slip.getSocialInsurance()), zeroIfNull(slip.getHealthInsurance()),
+                zeroIfNull(slip.getUnemploymentInsurance()),
                 zeroIfNull(slip.getPitDeduction()), zeroIfNull(slip.getOtherDeduction()),
-                deductions, zeroIfNull(slip.getNetSalary()), slip.getWorkingDays(),
+                deductions, zeroIfNull(slip.getNetSalary()),
+                zeroIfNull(slip.getEmployerSocialInsurance()), zeroIfNull(slip.getEmployerHealthInsurance()),
+                zeroIfNull(slip.getEmployerUnemploymentInsurance()), employerInsuranceTotal, slip.getWorkingDays(),
                 slip.getAbsentDays(), zeroIfNull(slip.getOvertimeHours()), slip.getSnapshotData()
         );
     }

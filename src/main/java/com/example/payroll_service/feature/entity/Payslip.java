@@ -46,6 +46,18 @@ public class Payslip extends BaseEntity {
     @Column(name = "health_insurance", nullable = false)
     BigDecimal healthInsurance;
 
+    @Column(name = "unemployment_insurance", nullable = false)
+    BigDecimal unemploymentInsurance;
+
+    @Column(name = "employer_social_insurance", nullable = false)
+    BigDecimal employerSocialInsurance;
+
+    @Column(name = "employer_health_insurance", nullable = false)
+    BigDecimal employerHealthInsurance;
+
+    @Column(name = "employer_unemployment_insurance", nullable = false)
+    BigDecimal employerUnemploymentInsurance;
+
     @Column(name = "pit_deduction", nullable = false)
     BigDecimal pitDeduction;
 

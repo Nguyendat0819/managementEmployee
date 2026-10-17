@@ -7,6 +7,7 @@ import com.example.payroll_service.feature.model.request.PayrollRunRequest;
 import com.example.payroll_service.feature.model.request.PayslipBatchRequest;
 import com.example.payroll_service.feature.model.response.PayrollRunResponse;
 import com.example.payroll_service.feature.model.response.PayslipResponse;
+import com.example.payroll_service.feature.model.response.PayrollCalculationResponse;
 import com.example.payroll_service.feature.service.PayrollRunService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,6 +49,11 @@ public class PayrollRunController implements PayrollRunApi {
     @Override
     public ApiResponse<List<PayslipResponse>> getPayslips(Long id) {
         return responseFactory.success(service.getPayslips(id));
+    }
+
+    @Override
+    public ApiResponse<PayrollCalculationResponse> calculate(Long id) {
+        return responseFactory.success(service.calculate(id));
     }
 
     @Override
