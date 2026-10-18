@@ -1,0 +1,35 @@
+# ============================================================
+#  application-dev.yaml — profile mặc định cho local dev
+#  CHẠY KHÔNG CẦN DATABASE THẬT.
+#
+#  Cách hoạt động:
+#    - app.database.enabled=false  →  không khởi tạo JPA/JDBC,
+#      JwtAuditingConfig không kích hoạt.
+#    - spring.autoconfigure.exclude  →  tắt hẳn các DataSource/JPA
+#      autoconfig để không ném lỗi "Failed to configure a DataSource".
+#
+#  Khi nào bật DB:
+#    - Khi dự án có @Entity / @Repository đầu tiên cần lưu DB,
+#      đổi app.database.enabled=true và bật lại spring.datasource
+#      trong application.yaml (hoặc tạo application-<tên>.yaml).
+# ============================================================
+
+logging:
+  level:
+    com.example.notification_service: DEBUG
+    org.springframework.security: INFO
+
+app:
+  # ----------------------------------------------------------
+  #  Cờ bật/tắt toàn bộ tầng DB ở app-level
+  #  - JpaAuditingConfig chỉ load khi true (mặc định true).
+  # ----------------------------------------------------------
+  database:
+    enabled: ${APP_DATABASE_ENABLED:true}
+
+  security:
+    enabled: ${APP_SECURITY_ENABLED:true}   # dev: bật filter để @AuthenticationPrincipal Jwt hoạt động
+    cache:
+      enabled: true
+  jwt:
+    secret: ${APP_JWT_SECRET:development-only-secret-change-before-production}
