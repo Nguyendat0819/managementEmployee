@@ -24,6 +24,7 @@ import com.example.payroll_service.feature.repository.PayrollRunRepository;
 import com.example.payroll_service.feature.repository.PayslipRepository;
 import com.example.payroll_service.feature.repository.SalaryStructureRepository;
 import com.example.payroll_service.feature.service.PayrollRunService;
+import com.example.payroll_service.feature.task.repository.EmployeeTaskRepository;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import lombok.AccessLevel;
@@ -68,6 +69,7 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     AttendancePayrollClient attendanceClient;
     PayrollHolidayRepository holidayRepository;
     SalaryStructureRepository salaryStructureRepository;
+    EmployeeTaskRepository taskRepository;
     VietnamPayrollCalculator calculator;
 
     @Override
@@ -119,6 +121,10 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     public List<PayslipResponse> addPayslips(Long runId, List<PayslipLineRequest> entries) {
         PayrollRun run = findRun(runId);
         requireStatus(run, DRAFT);
+        if (entries == null || entries.isEmpty()) {
+            throw new BusinessException(DomainCode.BAD_REQUEST,
+                    "chưa có phiếu lương nào được cung cấp; hãy chọn ít nhất một nhân viên để thêm phiếu");
+        }
 
         Set<String> employeeCodes = new HashSet<>();
         List<Payslip> slips = new ArrayList<>(entries.size());
@@ -159,8 +165,11 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         LocalDate periodStart = LocalDate.of(run.getPeriodYear(), run.getPeriodMonth(), 1);
         LocalDate periodEnd = periodStart.withDayOfMonth(periodStart.lengthOfMonth());
         List<PayrollEmployeeResponse> candidates = fetchEligibleEmployees(periodStart, periodEnd);
+        String periodLabel = "Tháng " + run.getPeriodMonth() + "/" + run.getPeriodYear();
         if (candidates.isEmpty()) {
-            throw new BusinessException(DomainCode.BAD_REQUEST, "không có nhân viên có hợp đồng hiệu lực trong kỳ lương");
+            throw new BusinessException(DomainCode.BAD_REQUEST,
+                    "không thể tính lương cho " + periodLabel
+                            + " vì không có nhân viên nào có hợp đồng hiệu lực; hãy kiểm tra danh sách nhân viên và thời hạn hợp đồng");
         }
 
         List<PayrollHoliday> holidays = holidayRepository
@@ -174,8 +183,23 @@ public class PayrollRunServiceImpl implements PayrollRunService {
                                 ? periodEnd : candidate.contractEndDate()))
                 .filter(period -> !period.from().isAfter(period.to()))
                 .toList();
+        if (employeePeriods.isEmpty()) {
+            throw new BusinessException(DomainCode.BAD_REQUEST,
+                    "không thể tính lương cho " + periodLabel
+                            + " vì không có hợp đồng nào giao với thời gian của kỳ lương; hãy kiểm tra ngày bắt đầu và kết thúc hợp đồng");
+        }
         List<PayrollAttendanceSummaryResponse> attendanceSummaries = fetchAttendance(periodStart, periodEnd,
                 employeePeriods, holidayDates);
+        Map<String, TaskBonus> taskBonusesByCode = taskRepository.summarizeApprovedBonuses(
+                        periodStart.withDayOfMonth(1), periodEnd.withDayOfMonth(1).plusMonths(1)).stream()
+                .collect(Collectors.toMap(summary -> normalizeCode(summary.getEmployeeCode()),
+                        summary -> new TaskBonus(zeroIfNull(summary.getBonusAmount()), summary.getTaskCount()),
+                        (first, ignored) -> first));
+        Map<String, TaskPenalty> taskPenaltiesByCode = taskRepository.summarizeReviewedTaskPenalties(
+                        periodStart.withDayOfMonth(1), periodEnd.withDayOfMonth(1).plusMonths(1)).stream()
+                .collect(Collectors.toMap(summary -> normalizeCode(summary.getEmployeeCode()),
+                        summary -> new TaskPenalty(zeroIfNull(summary.getPenaltyAmount()), summary.getTaskCount()),
+                        (first, ignored) -> first));
         Map<String, PayrollAttendanceSummaryResponse> attendanceByCode = attendanceSummaries.stream()
                 .collect(Collectors.toMap(summary -> normalizeCode(summary.employeeCode()), summary -> summary,
                         (first, ignored) -> first));
@@ -186,12 +210,15 @@ public class PayrollRunServiceImpl implements PayrollRunService {
 
         List<Payslip> slips = new ArrayList<>(employeeContracts.size());
         List<String> warnings = new ArrayList<>();
+        int missingAttendanceCount = 0;
+        int missingSalaryCount = 0;
         warnings.add(CALCULATION_ASSUMPTIONS);
         for (Map.Entry<String, List<PayrollEmployeeResponse>> entry : employeeContracts.entrySet()) {
             List<PayrollEmployeeResponse> employeeRows = entry.getValue();
             String employeeCode = employeeRows.get(0).employeeCode();
             PayrollAttendanceSummaryResponse attendance = attendanceByCode.get(entry.getKey());
             if (attendance == null) {
+                missingAttendanceCount++;
                 warnings.add(employeeCode + ": không nhận được dữ liệu tổng hợp chấm công.");
                 continue;
             }
@@ -202,15 +229,27 @@ public class PayrollRunServiceImpl implements PayrollRunService {
             warnings.addAll(monthlyPay.warnings().stream()
                     .map(warning -> employeeCode + ": " + warning).toList());
             if (monthlyPay.baseSalary().signum() <= 0) {
+                missingSalaryCount++;
                 warnings.add(employeeCode + ": thiếu lương hợp đồng và cấu trúc lương hiệu lực; bỏ qua phiếu.");
                 continue;
             }
 
+            TaskBonus taskBonus = taskBonusesByCode.getOrDefault(entry.getKey(), new TaskBonus(BigDecimal.ZERO, 0L));
+            TaskPenalty taskPenalty = taskPenaltiesByCode.getOrDefault(entry.getKey(), new TaskPenalty(BigDecimal.ZERO, 0L));
             VietnamPayrollCalculator.Result result = calculator.calculate(monthlyPay.baseSalary(),
-                    monthlyPay.allowance(), monthlyPay.insuranceBase(), attendance, periodStart, 0);
+                    monthlyPay.allowance(), monthlyPay.insuranceBase(), attendance, periodStart, 0,
+                    taskBonus.amount());
             List<String> employeeWarnings = new ArrayList<>(attendance.warnings());
             employeeWarnings.addAll(monthlyPay.warnings());
             employeeWarnings.add(CALCULATION_ASSUMPTIONS);
+            if (taskBonus.count() > 0) {
+                employeeWarnings.add("Đã cộng thưởng " + taskBonus.count() + " task hoàn thành được nghiệm thu: "
+                        + taskBonus.amount() + " VNĐ.");
+            }
+            if (taskPenalty.count() > 0) {
+                employeeWarnings.add("Đã khấu trừ " + taskPenalty.count() + " task chưa hoàn thành sau khi bị yêu cầu bổ sung: "
+                        + taskPenalty.amount() + " VNĐ.");
+            }
             if (attendance.standardWorkingMinutes() <= 0 && attendance.regularOvertimeMinutes()
                     + attendance.restDayOvertimeMinutes() + attendance.holidayOvertimeMinutes() > 0) {
                 String overtimeWarning = "Có phút tăng ca nhưng thiếu giờ chuẩn để quy đổi ra tiền.";
@@ -218,11 +257,18 @@ public class PayrollRunServiceImpl implements PayrollRunService {
                 employeeWarnings.add(overtimeWarning);
             }
             slips.add(toCalculatedPayslip(runId, employeeRows, attendance, monthlyPay, result, periodStart,
-                    employeeWarnings));
+                    employeeWarnings, taskBonus, taskPenalty));
         }
 
         if (slips.isEmpty()) {
-            throw new BusinessException(DomainCode.BAD_REQUEST, "không thể tạo phiếu lương do thiếu dữ liệu lương hợp lệ");
+            String reason = missingSalaryCount == employeeContracts.size()
+                    ? "tất cả nhân viên đều thiếu lương hợp đồng hoặc cấu trúc lương hiệu lực"
+                    : missingAttendanceCount == employeeContracts.size()
+                    ? "không nhận được dữ liệu chấm công cho bất kỳ nhân viên nào"
+                    : "không có nhân viên nào đủ dữ liệu chấm công và lương hợp lệ";
+            throw new BusinessException(DomainCode.BAD_REQUEST,
+                    "không thể tạo phiếu lương cho " + periodLabel + " vì " + reason
+                            + "; hãy kiểm tra dữ liệu hợp đồng, cấu trúc lương và chấm công");
         }
         payslipRepository.saveAll(slips);
         refreshTotals(run);
@@ -237,7 +283,9 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         PayrollRun run = findRun(id);
         requireStatus(run, DRAFT);
         if (payslipRepository.findByRunOrderByEmployeeCodeAsc(id).isEmpty()) {
-            throw new BusinessException(DomainCode.BAD_REQUEST, "kỳ lương cần có ít nhất một phiếu lương trước khi gửi duyệt");
+            throw new BusinessException(DomainCode.BAD_REQUEST,
+                    "không thể gửi duyệt Tháng " + run.getPeriodMonth() + "/" + run.getPeriodYear()
+                            + " vì kỳ lương chưa có phiếu; hãy tính lương hoặc thêm phiếu lương trước");
         }
         run.setStatus(PENDING_APPROVAL);
         refreshTotals(run);
@@ -249,6 +297,11 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     public PayrollRunResponse approve(Long id) {
         PayrollRun run = findRun(id);
         requireStatus(run, PENDING_APPROVAL);
+        if (payslipRepository.findByRunOrderByEmployeeCodeAsc(id).isEmpty()) {
+            throw new BusinessException(DomainCode.BAD_REQUEST,
+                    "không thể duyệt Tháng " + run.getPeriodMonth() + "/" + run.getPeriodYear()
+                            + " vì kỳ lương chưa có phiếu lương");
+        }
         run.setStatus(APPROVED);
         run.setApprovedBy(SecurityUtil.getCurrentUsername());
         run.setApprovedAt(LocalDateTime.now(BUSINESS_ZONE));
@@ -421,7 +474,7 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     private Payslip toCalculatedPayslip(Long runId, List<PayrollEmployeeResponse> contracts,
                                         PayrollAttendanceSummaryResponse attendance, MonthlyPay monthlyPay,
                                         VietnamPayrollCalculator.Result result, LocalDate periodStart,
-                                        List<String> employeeWarnings) {
+                                        List<String> employeeWarnings, TaskBonus taskBonus, TaskPenalty taskPenalty) {
         PayrollEmployeeResponse employee = contracts.stream()
                 .max(Comparator.comparing(PayrollEmployeeResponse::contractStartDate)).orElseThrow();
         Payslip slip = new Payslip();
@@ -430,7 +483,7 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         slip.setBaseSalary(result.baseSalary());
         slip.setTotalAllowance(result.totalAllowance());
         slip.setOvertimePay(result.overtimePay());
-        slip.setBonus(BigDecimal.ZERO);
+        slip.setBonus(taskBonus.amount());
         slip.setGrossSalary(result.grossSalary());
         slip.setSocialInsurance(result.socialInsurance());
         slip.setHealthInsurance(result.healthInsurance());
@@ -439,8 +492,8 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         slip.setEmployerHealthInsurance(result.employerHealthInsurance());
         slip.setEmployerUnemploymentInsurance(result.employerUnemploymentInsurance());
         slip.setPitDeduction(result.pitDeduction());
-        slip.setOtherDeduction(BigDecimal.ZERO);
-        slip.setNetSalary(result.netSalary());
+        slip.setOtherDeduction(taskPenalty.amount());
+        slip.setNetSalary(result.netSalary().subtract(taskPenalty.amount()));
         slip.setWorkingDays((short) Math.min(attendance.workedDays(), Short.MAX_VALUE));
         slip.setAbsentDays((short) Math.min(attendance.absentDays(), Short.MAX_VALUE));
         slip.setOvertimeHours(result.overtimeHours());
@@ -455,6 +508,10 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         snapshot.put("contractMonthlyAllowance", monthlyPay.allowance());
         snapshot.put("scheduledDays", attendance.scheduledDays());
         snapshot.put("workedDays", attendance.workedDays());
+        snapshot.put("completedTaskCount", taskBonus.count());
+        snapshot.put("completedTaskBonus", taskBonus.amount());
+        snapshot.put("incompleteTaskCount", taskPenalty.count());
+        snapshot.put("incompleteTaskPenalty", taskPenalty.amount());
         snapshot.put("absentDays", attendance.absentDays());
         snapshot.put("paidHolidayDays", attendance.paidHolidayDays());
         snapshot.put("standardWorkingMinutes", attendance.standardWorkingMinutes());
@@ -496,6 +553,12 @@ public class PayrollRunServiceImpl implements PayrollRunService {
 
     private record MonthlyPay(BigDecimal baseSalary, BigDecimal allowance, BigDecimal insuranceBase,
                               List<String> warnings) {
+    }
+
+    private record TaskBonus(BigDecimal amount, long count) {
+    }
+
+    private record TaskPenalty(BigDecimal amount, long count) {
     }
 
     private PayrollRun findRun(Long id) {

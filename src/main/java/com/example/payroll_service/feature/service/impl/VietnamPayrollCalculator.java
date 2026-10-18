@@ -28,6 +28,14 @@ public class VietnamPayrollCalculator {
     public Result calculate(BigDecimal monthlyBase, BigDecimal monthlyAllowance, BigDecimal monthlyInsuranceBase,
                             PayrollAttendanceSummaryResponse attendance, LocalDate periodStart,
                             int dependentCount) {
+        return calculate(monthlyBase, monthlyAllowance, monthlyInsuranceBase, attendance, periodStart,
+                dependentCount, BigDecimal.ZERO);
+    }
+
+    public Result calculate(BigDecimal monthlyBase, BigDecimal monthlyAllowance, BigDecimal monthlyInsuranceBase,
+                            PayrollAttendanceSummaryResponse attendance, LocalDate periodStart,
+                            int dependentCount, BigDecimal approvedTaskBonus) {
+        BigDecimal taskBonus = approvedTaskBonus == null ? BigDecimal.ZERO : approvedTaskBonus;
         BigDecimal paidRatio = paidRatio(attendance);
         BigDecimal earnedBase = money(monthlyBase.multiply(paidRatio));
         BigDecimal earnedAllowance = money(monthlyAllowance.multiply(paidRatio));
@@ -43,7 +51,7 @@ public class VietnamPayrollCalculator {
                         .add(hourlyRate(monthlyBase, standardMinutes)
                                 .multiply(BigDecimal.valueOf(holidayMinutes)).multiply(new BigDecimal("3")))
                         .divide(BigDecimal.valueOf(60), 0, RoundingMode.HALF_UP));
-        BigDecimal gross = money(earnedBase.add(earnedAllowance).add(overtimePay));
+        BigDecimal gross = money(earnedBase.add(earnedAllowance).add(overtimePay).add(taskBonus));
 
         BigDecimal insuranceBase = cappedInsuranceBase(monthlyInsuranceBase, periodStart);
         BigDecimal employeeSocial = money(insuranceBase.multiply(EMPLOYEE_SOCIAL_RATE));
@@ -56,7 +64,7 @@ public class VietnamPayrollCalculator {
 
         BigDecimal overtimeTaxExempt = overtimeTaxExempt(monthlyBase, standardMinutes,
                 regularMinutes, restMinutes, holidayMinutes, overtimePay, periodStart);
-        BigDecimal taxableIncome = earnedBase.add(earnedAllowance).add(overtimePay).subtract(overtimeTaxExempt)
+        BigDecimal taxableIncome = earnedBase.add(earnedAllowance).add(overtimePay).add(taskBonus).subtract(overtimeTaxExempt)
                 .subtract(employeeSocial).subtract(employeeHealth).subtract(employeeUnemployment);
         BigDecimal personalDeduction = periodStart.getYear() >= 2026
                 ? new BigDecimal("15500000") : new BigDecimal("11000000");

@@ -14,6 +14,10 @@ server:
 spring:
   application:
     name: payroll_service
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
 
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
@@ -33,8 +37,9 @@ spring:
     password: "${DB_PASSWORD:Nguyendat809@Hr}"
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      # The shared Supabase session pool is limited to 15 clients across services.
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:2}
+      minimum-idle: ${DB_POOL_MIN_IDLE:1}
       connection-timeout: 60000
       idle-timeout: 300000
       max-lifetime: 1800000
@@ -157,3 +162,7 @@ service:
     context-path: admin
     endpoints:
       get-permission: /api/v1/role-permission/all
+
+task:
+  evidence:
+    storage-dir: ${TASK_EVIDENCE_STORAGE_DIR:./uploads/task-evidence}
