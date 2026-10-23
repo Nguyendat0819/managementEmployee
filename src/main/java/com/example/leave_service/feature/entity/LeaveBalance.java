@@ -10,6 +10,8 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+
 @Entity
 @Data
 @FieldDefaults(level = AccessLevel.PACKAGE)
@@ -24,6 +26,18 @@ public class LeaveBalance {
     @Column(name = "employee_code", length = 255)
     String employeeCode;
 
+    @Column(name = "requester_user_id")
+    Long requesterUserId;
+
     @Column(name = "type")
     Long type;
+
+    @Column(name = "balance_year", nullable = false)
+    Integer balanceYear;
+
+    @Column(name = "total_days", nullable = false)
+    BigDecimal totalDays;
+
+    @Column(name = "used_days", nullable = false)
+    BigDecimal usedDays;
 }

@@ -30,4 +30,7 @@ public class Holiday extends BaseEntity {
 
     @Column(name = "notes", length = 500)
     String notes;
+
+    @Column(name = "is_deleted", nullable = false)
+    Boolean isDeleted = false;
 }

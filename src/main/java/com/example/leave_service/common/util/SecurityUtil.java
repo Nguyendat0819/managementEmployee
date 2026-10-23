@@ -1,5 +1,7 @@
 package com.example.leave_service.common.util;
 
+import com.example.leave_service.common.exception.BusinessException;
+import com.example.leave_service.common.response.DomainCode;
 import lombok.experimental.UtilityClass;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -39,6 +41,16 @@ public final class SecurityUtil {
 
     public static String getCurrentUsername() {
         return getJwt().map(jwt -> jwt.getClaimAsString(PREFERRED_USERNAME)).orElse(ANONYMOUS);
+    }
+
+    public static Long getCurrentUserId() {
+        String subject = getJwt().map(Jwt::getSubject)
+                .orElseThrow(() -> new BusinessException(DomainCode.UNAUTHORIZED));
+        try {
+            return Long.valueOf(subject);
+        } catch (NumberFormatException exception) {
+            throw new BusinessException(DomainCode.UNAUTHORIZED);
+        }
     }
 
     public static Set<String> getRoles() {

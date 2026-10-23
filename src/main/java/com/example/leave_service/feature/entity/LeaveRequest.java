@@ -18,6 +18,12 @@ import java.time.LocalDateTime;
 @Table(name = "leave_requests", schema = "hr_service")
 public class LeaveRequest extends BaseEntity {
 
+    @Column(name = "request_code", nullable = false, unique = true, length = 40)
+    String requestCode;
+
+    @Column(name = "requester_user_id")
+    Long requesterUserId;
+
     @Column(name = "employee_code", nullable = false, length = 255)
     String employeeCode;
 
@@ -35,6 +41,9 @@ public class LeaveRequest extends BaseEntity {
 
     @Column(name = "reason", columnDefinition = "text")
     String reason;
+
+    @Column(name = "evidence_url", length = 2000)
+    String evidenceUrl;
 
     @Column(name = "status", nullable = false, length = 50)
     String status;

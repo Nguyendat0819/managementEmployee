@@ -140,7 +140,7 @@ app:
   # HttpClient cho group "internal" (cổng gateway nội bộ)
   internal:
     enabled: true
-    base-url: ${INTERNAL_BASE_URL:http://localhost:9999}
+    base-url: ${INTERNAL_BASE_URL:http://localhost:8088}
 
   jwt:
     secret: ${APP_JWT_SECRET}
