@@ -10,6 +10,7 @@ import java.time.LocalDate;
 
 @Data
 public class EmployeeRequest {
+    private Long userId;
     @NotBlank @Size(max = 255)
     private String employeeCode;
     @NotBlank @Size(max = 200)

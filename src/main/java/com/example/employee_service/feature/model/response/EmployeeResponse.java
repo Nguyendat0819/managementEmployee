@@ -3,6 +3,7 @@ package com.example.employee_service.feature.model.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -24,6 +25,8 @@ public class EmployeeResponse {
     String departmentName;
     String positionCode;
     String positionName;
+    BigDecimal positionSalaryMin;
+    BigDecimal positionSalaryMax;
     String employmentType;
     LocalDate hireDate;
     LocalDate contractEnd;

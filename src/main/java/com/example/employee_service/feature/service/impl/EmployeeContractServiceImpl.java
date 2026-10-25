@@ -143,7 +143,9 @@ public class EmployeeContractServiceImpl implements EmployeeContractService {
         validateDates(employee, startDate, endDate);
 
         Departments department = departmentsRepository.findByDeptCodeAndIsDeleted(employee.getDepartmentCode(), false);
-        Positions position = positionsRepository.findByPositionCodeAndIsDeletedFalse(employee.getPositionCode()).orElse(null);
+        Positions position = positionsRepository.findByPositionCodeAndIsDeletedFalse(employee.getPositionCode())
+                .orElseThrow(() -> new BusinessException(DomainCode.NOT_FOUND, "chức vụ " + employee.getPositionCode()));
+        validateSalaryRange(actualSalary, position);
 
         contract.setContractNo(contractNo.trim());
         contract.setContractType(contractType.trim());
@@ -162,6 +164,16 @@ public class EmployeeContractServiceImpl implements EmployeeContractService {
         contract.setEndDate(endDate);
         contract.setSignedDate(signedDate);
         contract.setStatus(status.trim());
+    }
+
+    private void validateSalaryRange(java.math.BigDecimal actualSalary, Positions position) {
+        if (actualSalary.compareTo(position.getBaseSalaryMin()) < 0
+                || actualSalary.compareTo(position.getBaseSalaryMax()) > 0) {
+            throw new BusinessException(DomainCode.VALIDATION_ERROR,
+                    "lương thực nhận của chức vụ " + position.getTitle() + " phải nằm trong khoảng "
+                            + position.getBaseSalaryMin().toPlainString() + " - "
+                            + position.getBaseSalaryMax().toPlainString() + " VNĐ");
+        }
     }
 
     private void validateDates(Employees employee, LocalDate startDate, LocalDate endDate) {

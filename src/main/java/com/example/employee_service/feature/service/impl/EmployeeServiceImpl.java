@@ -11,6 +11,7 @@ import com.example.employee_service.feature.model.request.EmployeeRequest;
 import com.example.employee_service.feature.model.request.EmployeeSearchRequest;
 import com.example.employee_service.feature.model.response.EmployeeResponse;
 import com.example.employee_service.feature.model.response.EmployeeCatalogResponse;
+import com.example.employee_service.feature.model.response.EmployeeUserOptionResponse;
 import com.example.employee_service.feature.repository.DepartmentsRepository;
 import com.example.employee_service.feature.repository.EmployeesRepository;
 import com.example.employee_service.feature.repository.PositionsRepository;
@@ -25,7 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.example.employee_service.common.util.Const.IS_ACTIVE;
 
 @Service
 @RequiredArgsConstructor
@@ -55,11 +59,21 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<EmployeeUserOptionResponse> getUnlinkedUsers() {
+        Set<Long> linkedUserIds = Set.copyOf(employeesRepository.findLinkedUserIds());
+        return usersRepository.findAllByIsDeletedFalseAndStatusOrderByUserNameAsc(IS_ACTIVE).stream()
+                .filter(user -> !linkedUserIds.contains(user.getId()))
+                .map(user -> new EmployeeUserOptionResponse(user.getId(), user.getUserName()))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<EmployeeResponse> getEmployees(String search, String departmentCode, String positionCode, String status, String employmentType) {
         Map<String, String> departments = departmentsRepository.findAllByIsDeletedFalseOrderByLevelAscNameAsc().stream()
                 .collect(Collectors.toMap(Departments::getDeptCode, Departments::getName, (first, ignored) -> first));
-        Map<String, String> positions = positionsRepository.findAllByIsDeletedFalseOrderByTitleAsc().stream()
-                .collect(Collectors.toMap(Positions::getPositionCode, Positions::getTitle, (first, ignored) -> first));
+        Map<String, Positions> positions = positionsRepository.findAllByIsDeletedFalseOrderByTitleAsc().stream()
+                .collect(Collectors.toMap(Positions::getPositionCode, position -> position, (first, ignored) -> first));
         return employeesRepository.search(normalizeSearch(search), normalize(departmentCode), normalize(positionCode), normalize(status), normalize(employmentType))
                 .stream().map(employee -> toEmployeeResponse(employee, departments, positions)).toList();
     }
@@ -92,7 +106,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         validateReferences(request);
         Employees employee = new Employees();
         applyRequest(employee, request);
-        linkLoginAccount(employee);
+        linkLoginAccount(employee, request.getUserId());
         employee.setIsDeleted(false);
         return toEmployeeResponse(employeesRepository.save(employee));
     }
@@ -107,7 +121,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         validateReferences(request);
         applyRequest(employee, request);
-        linkLoginAccount(employee);
+        linkLoginAccount(employee, request.getUserId());
         return toEmployeeResponse(employeesRepository.save(employee));
     }
 
@@ -175,7 +189,19 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setStatus(request.getStatus().trim());
     }
 
-    private void linkLoginAccount(Employees employee) {
+    private void linkLoginAccount(Employees employee, Long requestedUserId) {
+        if (requestedUserId != null) {
+            Users account = usersRepository.findById(requestedUserId)
+                    .filter(user -> !Boolean.TRUE.equals(user.getIsDeleted()) && IS_ACTIVE.equals(user.getStatus()))
+                    .orElseThrow(() -> new BusinessException(DomainCode.NOT_FOUND, "tài khoản " + requestedUserId));
+            employeesRepository.findByUserIdAndIsDeletedFalse(requestedUserId)
+                    .filter(linkedEmployee -> !linkedEmployee.getId().equals(employee.getId()))
+                    .ifPresent(linkedEmployee -> {
+                        throw new BusinessException(DomainCode.CONFLICT, "tài khoản đã được liên kết với hồ sơ nhân viên khác");
+                    });
+            employee.setUserId(account.getId());
+            return;
+        }
         if (employee.getUserId() != null || employee.getEmail() == null || employee.getEmail().isBlank()) {
             return;
         }
@@ -206,15 +232,16 @@ public class EmployeeServiceImpl implements EmployeeService {
     private EmployeeResponse toEmployeeResponse(Employees employee) {
         Departments department = employee.getDepartmentCode() == null ? null
                 : departmentsRepository.findByDeptCodeAndIsDeleted(employee.getDepartmentCode(), false);
-        String positionName = employee.getPositionCode() == null ? null : positionsRepository
+        Positions position = employee.getPositionCode() == null ? null : positionsRepository
                 .findByPositionCodeAndIsDeletedFalse(employee.getPositionCode())
-                .map(Positions::getTitle).orElse(null);
+                .orElse(null);
         return toEmployeeResponse(employee,
                 department == null ? Map.of() : Map.of(department.getDeptCode(), department.getName()),
-                positionName == null ? Map.of() : Map.of(employee.getPositionCode(), positionName));
+                position == null ? Map.of() : Map.of(employee.getPositionCode(), position));
     }
 
-    private EmployeeResponse toEmployeeResponse(Employees employee, Map<String, String> departments, Map<String, String> positions) {
+    private EmployeeResponse toEmployeeResponse(Employees employee, Map<String, String> departments, Map<String, Positions> positions) {
+        Positions position = positions.get(employee.getPositionCode());
         return EmployeeResponse.builder()
                 .id(employee.getId())
                 .employeeCode(employee.getEmployeeCode())
@@ -228,7 +255,9 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .departmentCode(employee.getDepartmentCode())
                 .departmentName(departments.get(employee.getDepartmentCode()))
                 .positionCode(employee.getPositionCode())
-                .positionName(positions.get(employee.getPositionCode()))
+                .positionName(position == null ? null : position.getTitle())
+                .positionSalaryMin(position == null ? null : position.getBaseSalaryMin())
+                .positionSalaryMax(position == null ? null : position.getBaseSalaryMax())
                 .employmentType(employee.getEmploymentType())
                 .hireDate(employee.getHireDate())
                 .contractEnd(employee.getContractEnd())

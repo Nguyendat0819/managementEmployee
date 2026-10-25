@@ -8,6 +8,7 @@ import com.example.employee_service.common.response.DomainCode;
 import com.example.employee_service.feature.controller.api.EmployeeApi;
 import com.example.employee_service.feature.model.request.EmployeeSearchRequest;
 import com.example.employee_service.feature.model.response.EmployeeCatalogResponse;
+import com.example.employee_service.feature.model.response.EmployeeUserOptionResponse;
 import com.example.employee_service.feature.model.response.EmployeeResponse;
 import com.example.employee_service.feature.model.request.EmployeeRequest;
 import com.example.employee_service.feature.service.EmployeeService;
@@ -34,6 +35,11 @@ public class EmployeeController implements EmployeeApi {
     @Override
     public ApiResponse<EmployeeCatalogResponse> getCatalogs() {
         return apiResponseFactory.success(employeeService.getCatalogs());
+    }
+
+    @Override
+    public ApiResponse<List<EmployeeUserOptionResponse>> getUnlinkedUsers() {
+        return apiResponseFactory.success(employeeService.getUnlinkedUsers());
     }
 
     @Override

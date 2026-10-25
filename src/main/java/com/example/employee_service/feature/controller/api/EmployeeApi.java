@@ -7,6 +7,7 @@ import com.example.employee_service.feature.constant.PermissionDefine;
 import com.example.employee_service.feature.model.request.EmployeeSearchRequest;
 import com.example.employee_service.feature.model.response.EmployeeResponse;
 import com.example.employee_service.feature.model.response.EmployeeCatalogResponse;
+import com.example.employee_service.feature.model.response.EmployeeUserOptionResponse;
 import com.example.employee_service.feature.model.request.EmployeeRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,6 +37,11 @@ public interface EmployeeApi {
     @GetMapping("/catalogs")
     @RequiresPermission(PermissionDefine.EMPLOYEE_READ)
     ApiResponse<EmployeeCatalogResponse> getCatalogs();
+
+    @Operation(summary = "Lấy tài khoản chưa liên kết với nhân viên")
+    @GetMapping("/unlinked-users")
+    @RequiresPermission(PermissionDefine.EMPLOYEE_CREATE)
+    ApiResponse<List<EmployeeUserOptionResponse>> getUnlinkedUsers();
 
     @Operation(summary = "Lấy danh sách nhân viên")
     @GetMapping

@@ -31,6 +31,9 @@ public interface EmployeesRepository extends BaseRepository<Employees, Long>, Em
 
     Optional<Employees> findByUserIdAndIsDeletedFalse(Long userId);
 
+    @Query("SELECT e.userId FROM Employees e WHERE e.isDeleted = false AND e.userId IS NOT NULL")
+    List<Long> findLinkedUserIds();
+
     List<Employees> findAllByEmailIgnoreCaseAndIsDeletedFalse(String email);
 
     @Query("""

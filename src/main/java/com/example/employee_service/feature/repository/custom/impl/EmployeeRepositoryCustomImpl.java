@@ -34,6 +34,14 @@ public class EmployeeRepositoryCustomImpl extends NativeQuerySupport implements 
                       FROM hr_service.positions p
                      WHERE p.position_code = e.position_code
                        AND p.is_deleted = FALSE) AS "positionName",
+                   (SELECT p.base_salary_min
+                      FROM hr_service.positions p
+                     WHERE p.position_code = e.position_code
+                       AND p.is_deleted = FALSE) AS "positionSalaryMin",
+                   (SELECT p.base_salary_max
+                      FROM hr_service.positions p
+                     WHERE p.position_code = e.position_code
+                       AND p.is_deleted = FALSE) AS "positionSalaryMax",
                    e.employment_type AS "employmentType",
                    e.hire_date AS "hireDate",
                    e.contract_end AS "contractEnd",
