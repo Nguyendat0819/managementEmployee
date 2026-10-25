@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,6 +23,9 @@ public class Users extends BaseEntity {
     @Column(name = "user_name", nullable = false, length = 255)
     String userName;
 
+    @Column(name = "full_name", length = 200)
+    String fullName;
+
     @Column(name = "password_hash", length = 500)
     String passwordHash;
 
@@ -33,6 +37,9 @@ public class Users extends BaseEntity {
 
     @Column(name = "last_login_at")
     LocalDateTime lastLoginAt;
+
+    @Column(name = "auth_state_changed_at")
+    Instant authStateChangedAt;
 
     @Column(name = "is_deleted", nullable = false)
     Boolean isDeleted = false;

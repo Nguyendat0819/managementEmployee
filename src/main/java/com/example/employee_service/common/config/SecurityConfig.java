@@ -49,6 +49,7 @@ public class SecurityConfig {
             "/api/auth/refresh",
             "/api/auth/logout",
             "/api/auth/register",
+            "/api/auth/forgot-password",
             "/actuator/health/**",
             "/actuator/info",
             "/actuator/prometheus",

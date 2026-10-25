@@ -70,7 +70,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-
         <!-- JWT resource server dùng để xác thực token do service phát hành. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

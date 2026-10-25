@@ -6,6 +6,8 @@ import com.example.employee_service.feature.model.response.AuthResponse;
 import com.example.employee_service.feature.model.response.TokenResponse;
 import com.example.employee_service.feature.model.request.LoginRequest;
 import com.example.employee_service.feature.model.request.RefreshTokenRequest;
+import com.example.employee_service.feature.model.request.ChangePasswordRequest;
+import com.example.employee_service.feature.model.request.ForgotPasswordRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -54,4 +56,14 @@ public interface AuthApi {
     @Operation(summary = "Tạo người dùng nội bộ")
     @PostMapping("/register")
     ApiResponse<String> createUser(@Valid @RequestBody UserCreateRequest request);
+
+    @Operation(summary = "Đổi mật khẩu của tài khoản đang đăng nhập")
+    @PostMapping("/change-password")
+    ApiResponse<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt);
+
+    @Operation(summary = "Gửi yêu cầu đặt lại mật khẩu đến quản trị viên")
+    @PostMapping("/forgot-password")
+    ApiResponse<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request);
 }

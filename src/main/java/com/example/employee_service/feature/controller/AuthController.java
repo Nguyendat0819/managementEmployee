@@ -8,6 +8,8 @@ import com.example.employee_service.feature.model.response.AuthResponse;
 import com.example.employee_service.feature.model.response.TokenResponse;
 import com.example.employee_service.feature.model.request.LoginRequest;
 import com.example.employee_service.feature.model.request.RefreshTokenRequest;
+import com.example.employee_service.feature.model.request.ChangePasswordRequest;
+import com.example.employee_service.feature.model.request.ForgotPasswordRequest;
 import com.example.employee_service.feature.model.response.UserResponse;
 import com.example.employee_service.feature.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -47,8 +49,20 @@ public class AuthController implements AuthApi {
     public ApiResponse<String> createUser(UserCreateRequest request) {
         // AuthController chỉ điều phối request; nghiệp vụ tạo user, mã hóa password
         // và lưu database được thực hiện ở AuthService.
-        UserResponse userResponse = authService.create(request);
+        UserResponse userResponse = authService.register(request);
         // Chỉ trả username làm kết quả xác nhận, không trả entity chứa password hoặc audit data.
         return apiResponseFactory.success(userResponse.getUserName());
+    }
+
+    @Override
+    public ApiResponse<Void> changePassword(ChangePasswordRequest request, Jwt jwt) {
+        authService.changePassword(jwt, request);
+        return apiResponseFactory.success();
+    }
+
+    @Override
+    public ApiResponse<String> forgotPassword(ForgotPasswordRequest request) {
+        authService.requestAdminPasswordReset(request.getEmail());
+        return apiResponseFactory.success("Nếu tài khoản tồn tại, yêu cầu đặt lại mật khẩu đã được chuyển đến quản trị viên.");
     }
 }

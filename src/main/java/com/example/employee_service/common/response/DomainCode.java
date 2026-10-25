@@ -37,8 +37,7 @@ public enum DomainCode {
 
     //  Lỗi server / service ngoài (5xx)
     INTERNAL_ERROR("EMP-500", HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống, vui lòng thử lại sau"),
-    EXTERNAL_SERVICE_ERROR("EMP-502", HttpStatus.BAD_GATEWAY, "Lỗi khi gọi dịch vụ ngoài: {}"),
-    SERVICE_UNAVAILABLE("EMP-503", HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ tạm thời không khả dụng");
+    EXTERNAL_SERVICE_ERROR("EMP-502", HttpStatus.BAD_GATEWAY, "Lỗi khi gọi dịch vụ ngoài: {}");
 
     //  Mã nghiệp vụ riêng (thêm theo service)
     // Ví dụ: EMPLOYEE_NOT_FOUND("EMP-1001", HttpStatus.NOT_FOUND, "Không tìm thấy employee id {}"),

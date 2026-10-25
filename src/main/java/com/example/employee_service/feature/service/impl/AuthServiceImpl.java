@@ -6,14 +6,19 @@ import com.example.employee_service.common.response.DomainCode;
 import com.example.employee_service.common.util.Const;
 import com.example.employee_service.feature.entity.Users;
 import com.example.employee_service.feature.entity.Employees;
+import com.example.employee_service.feature.entity.PasswordResetRequest;
+import com.example.employee_service.feature.constant.enums.UsersEnum;
+import com.example.employee_service.feature.model.request.ChangePasswordRequest;
 import com.example.employee_service.feature.model.request.LoginRequest;
 import com.example.employee_service.feature.model.request.RefreshTokenRequest;
 import com.example.employee_service.feature.model.request.UserCreateRequest;
 import com.example.employee_service.feature.model.response.AuthResponse;
 import com.example.employee_service.feature.model.response.TokenResponse;
 import com.example.employee_service.feature.model.response.UserResponse;
+import com.example.employee_service.feature.model.response.PasswordResetRequestResponse;
 import com.example.employee_service.feature.repository.UsersRepository;
 import com.example.employee_service.feature.repository.EmployeesRepository;
+import com.example.employee_service.feature.repository.PasswordResetRequestRepository;
 import com.example.employee_service.feature.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -29,6 +34,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -36,6 +43,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.example.employee_service.common.util.Const.IS_ACTIVE;
+import static com.example.employee_service.common.util.Const.IS_INACTIVE;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +51,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UsersRepository usersRepository;
     private final EmployeesRepository employeesRepository;
+    private final PasswordResetRequestRepository passwordResetRequestRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
@@ -95,7 +104,8 @@ public class AuthServiceImpl implements AuthService {
             Users user = usersRepository.findByUserNameAndIsDeletedFalse(
                     jwt.getClaimAsString(Const.PREFERRED_USERNAME));
             // User có thể đã bị vô hiệu hóa sau khi refresh token được phát.
-            if (user == null || !Const.IS_ACTIVE.equals(user.getStatus())) {
+            if (user == null || !Const.IS_ACTIVE.equals(user.getStatus())
+                    || accountChangedAfter(user, jwt.getIssuedAt())) {
                 throw new BusinessException(DomainCode.UNAUTHORIZED);
             }
 
@@ -181,15 +191,185 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public UserResponse create(UserCreateRequest request){
+        String roleCode = request.getRoleCode() == null || request.getRoleCode().isBlank()
+                ? "USER"
+                : request.getRoleCode().trim().toUpperCase();
+        String status = request.getStatus() == null || request.getStatus().isBlank()
+                ? IS_ACTIVE
+                : request.getStatus();
+        return createWithRole(request, roleCode, status);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse register(UserCreateRequest request) {
+        return createWithRole(request, "USER", IS_ACTIVE);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Jwt jwt, ChangePasswordRequest request) {
+        if (jwt == null) {
+            throw new BusinessException(DomainCode.UNAUTHORIZED);
+        }
+
+        Long userId;
+        try {
+            userId = Long.valueOf(jwt.getSubject());
+        } catch (NumberFormatException exception) {
+            throw new BusinessException(DomainCode.UNAUTHORIZED);
+        }
+
+        Users user = usersRepository.findById(userId)
+                .filter(account -> !Boolean.TRUE.equals(account.getIsDeleted()))
+                .orElseThrow(() -> new BusinessException(DomainCode.UNAUTHORIZED));
+        if (!IS_ACTIVE.equals(user.getStatus())) {
+            throw new BusinessException(DomainCode.FORBIDDEN);
+        }
+        if (user.getPasswordHash() == null
+                || !passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new BusinessException(DomainCode.UNAUTHORIZED);
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            throw new BusinessException(DomainCode.VALIDATION_ERROR, "mật khẩu mới phải khác mật khẩu hiện tại");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setAuthStateChangedAt(Instant.now());
+        usersRepository.save(user);
+        resolvePendingPasswordResetRequests(user.getId());
+        revokeRefreshTokensForUser(user.getId());
+    }
+
+    @Override
+    @Transactional
+    public void adminResetPassword(String userName, String newPassword) {
+        Users user = usersRepository.findByUserNameAndIsDeletedFalse(userName);
+        if (user == null) {
+            throw new BusinessException(DomainCode.NOT_FOUND, "tài khoản " + userName);
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setAuthStateChangedAt(Instant.now());
+        usersRepository.save(user);
+        resolvePendingPasswordResetRequests(user.getId());
+        revokeRefreshTokensForUser(user.getId());
+    }
+
+    @Override
+    @Transactional
+    public UserResponse adminUpdateUserStatus(String userName, UsersEnum action) {
+        Users user = usersRepository.findByUserNameAndIsDeletedFalse(userName);
+        if (user == null) {
+            throw new BusinessException(DomainCode.NOT_FOUND, "tài khoản " + userName);
+        }
+
+        if (action == UsersEnum.REVOKE) {
+            if (userName.equalsIgnoreCase(com.example.employee_service.common.util.SecurityUtil.getCurrentUsername())) {
+                throw new BusinessException(DomainCode.CONFLICT, "không thể tự khóa tài khoản đang đăng nhập");
+            }
+            if ("ADMIN".equalsIgnoreCase(user.getRoleCode()) && IS_ACTIVE.equals(user.getStatus())
+                    && usersRepository.countByRoleCodeAndStatusAndIsDeletedFalse("ADMIN", IS_ACTIVE) <= 1) {
+                throw new BusinessException(DomainCode.CONFLICT, "không thể khóa quản trị viên đang hoạt động cuối cùng");
+            }
+            user.setStatus(IS_INACTIVE);
+            user.setAuthStateChangedAt(Instant.now());
+            revokeRefreshTokensForUser(user.getId());
+        } else if (action == UsersEnum.RESTORE) {
+            user.setStatus(IS_ACTIVE);
+            user.setAuthStateChangedAt(Instant.now());
+        } else {
+            throw new BusinessException(DomainCode.INVALID_PARAMETER, "action");
+        }
+
+        usersRepository.save(user);
+        return buildUser(user);
+    }
+
+    @Override
+    @Transactional
+    public void requestAdminPasswordReset(String email) {
+        Users user = findPasswordResetAccount(email.trim());
+        if (user == null || !IS_ACTIVE.equals(user.getStatus())) {
+            return;
+        }
+
+        LocalDateTime requestedAt = LocalDateTime.now();
+        PasswordResetRequest resetRequest = passwordResetRequestRepository
+                .findFirstByUserIdAndStatus(user.getId(), "PENDING")
+                .orElseGet(PasswordResetRequest::new);
+        resetRequest.setUserId(user.getId());
+        resetRequest.setRequestedAt(requestedAt);
+        resetRequest.setStatus("PENDING");
+        passwordResetRequestRepository.save(resetRequest);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PasswordResetRequestResponse> getPasswordResetRequests() {
+        List<PasswordResetRequestResponse> requests = new ArrayList<>();
+        for (PasswordResetRequest resetRequest : passwordResetRequestRepository
+                .findAllByStatusOrderByRequestedAtAsc("PENDING")) {
+            usersRepository.findById(resetRequest.getUserId())
+                    .filter(user -> !Boolean.TRUE.equals(user.getIsDeleted()))
+                    .ifPresent(user -> requests.add(new PasswordResetRequestResponse(
+                            resetRequest.getId(),
+                            user.getId(),
+                            user.getUserName(),
+                            user.getFullName() == null || user.getFullName().isBlank()
+                                    ? user.getUserName() : user.getFullName(),
+                            user.getEmail(),
+                            resetRequest.getRequestedAt())));
+        }
+        return requests;
+    }
+
+    private Users findPasswordResetAccount(String email) {
+        List<Employees> employees = employeesRepository.findAllByEmailIgnoreCaseAndIsDeletedFalse(email);
+        List<Users> accounts = usersRepository.findAllByEmailIgnoreCaseAndIsDeletedFalse(email);
+        if (employees.size() > 1 || accounts.size() > 1) {
+            return null;
+        }
+
+        if (employees.size() == 1 && employees.get(0).getUserId() != null) {
+            Long userId = employees.get(0).getUserId();
+            if (accounts.size() == 1 && !Objects.equals(accounts.get(0).getId(), userId)) {
+                return null;
+            }
+            return usersRepository.findById(userId)
+                    .filter(account -> !Boolean.TRUE.equals(account.getIsDeleted()))
+                    .orElse(null);
+        }
+
+        if (accounts.size() != 1) {
+            return null;
+        }
+        Users account = accounts.get(0);
+        return employeesRepository.findByUserIdAndIsDeletedFalse(account.getId()).isPresent()
+                ? null : account;
+    }
+
+    private UserResponse createWithRole(UserCreateRequest request, String roleCode, String status) {
+        if (usersRepository.existsByUserNameIgnoreCaseAndIsDeletedFalse(request.getUsername().trim())) {
+            throw new BusinessException(DomainCode.CONFLICT, "tên đăng nhập đã được sử dụng");
+        }
+        if (usersRepository.existsByEmailIgnoreCaseAndIsDeletedFalse(request.getEmail().trim())) {
+            throw new BusinessException(DomainCode.CONFLICT, "email đã được sử dụng");
+        }
+
         // Tạo entity từ request tại service để áp dụng các giá trị mặc định trước khi lưu:
-        // role USER khi thiếu role, trạng thái active và bản ghi chưa bị soft-delete.
+        // các giá trị quyền và trạng thái đã được cố định theo điểm gọi (đăng ký hoặc admin).
         Users user = new Users();
-        user.setEmail(request.getEmail());
-        user.setUserName(request.getUsername());
+        user.setEmail(request.getEmail().trim());
+        user.setUserName(request.getUsername().trim());
+        String fullName = ((request.getFirstName() == null ? "" : request.getFirstName().trim()) + " "
+                + (request.getLastName() == null ? "" : request.getLastName().trim())).trim();
+        user.setFullName(fullName.isBlank() ? request.getUsername().trim() : fullName);
         // Chỉ lưu password đã mã hóa; password gốc không được ghi vào entity/database.
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRoleCode(request.getRoleCode() == null || request.getRoleCode().isBlank() ? "USER" : request.getRoleCode());
-        user.setStatus(IS_ACTIVE);
+        user.setAuthStateChangedAt(Instant.now());
+        user.setRoleCode(roleCode);
+        user.setStatus(status);
         user.setIsDeleted(false);
 
         // Repository chịu trách nhiệm persist entity; sau khi save, dữ liệu được map
@@ -214,12 +394,47 @@ public class AuthServiceImpl implements AuthService {
         return buildUser(saved);
     }
 
-    private  UserResponse buildUser(Users user){
+    private UserResponse buildUser(Users user){
+        String fullName = employeesRepository.findAllByEmailIgnoreCaseAndIsDeletedFalse(user.getEmail())
+                .stream().findFirst().map(Employees::getFullName).orElse(user.getFullName());
         return UserResponse.builder()
+                .id(user.getId())
                 .email(user.getEmail())
                 .userName(user.getUserName())
+                .fullName(fullName)
                 .roleCode(user.getRoleCode())
                 .status(user.getStatus())
+                .lastLoginAt(user.getLastLoginAt())
+                .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    private void resolvePendingPasswordResetRequests(Long userId) {
+        List<PasswordResetRequest> requests = passwordResetRequestRepository
+                .findAllByUserIdAndStatus(userId, "PENDING");
+        if (requests.isEmpty()) return;
+        LocalDateTime resolvedAt = LocalDateTime.now();
+        requests.forEach(request -> {
+            request.setStatus("RESOLVED");
+            request.setResolvedAt(resolvedAt);
+        });
+        passwordResetRequestRepository.saveAll(requests);
+    }
+
+    private void revokeRefreshTokensForUser(Long userId) {
+        for (String token : Set.copyOf(activeRefreshTokens)) {
+            try {
+                if (String.valueOf(userId).equals(jwtDecoder.decode(token).getSubject())) {
+                    activeRefreshTokens.remove(token);
+                }
+            } catch (JwtException exception) {
+                activeRefreshTokens.remove(token);
+            }
+        }
+    }
+
+    private boolean accountChangedAfter(Users user, Instant issuedAt) {
+        return user.getAuthStateChangedAt() != null
+                && (issuedAt == null || user.getAuthStateChangedAt().isAfter(issuedAt));
     }
 }

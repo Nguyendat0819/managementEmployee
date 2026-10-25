@@ -3,6 +3,7 @@ package com.example.employee_service.feature.model.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,4 +38,7 @@ public class UserCreateRequest {
     String password;
 
     String roleCode;
+
+    @Pattern(regexp = "ACTIVE|INACTIVE", message = "Trạng thái tài khoản không hợp lệ")
+    String status;
 }

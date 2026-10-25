@@ -20,5 +20,11 @@ public interface UsersRepository extends BaseRepository<Users, Long> {
 
     Users findByUserNameAndIsDeletedFalse(String userName);
 
+    boolean existsByUserNameIgnoreCaseAndIsDeletedFalse(String userName);
+
+    boolean existsByEmailIgnoreCaseAndIsDeletedFalse(String email);
+
     long countByRoleCodeAndIsDeletedFalse(String roleCode);
+
+    long countByRoleCodeAndStatusAndIsDeletedFalse(String roleCode, String status);
 }
