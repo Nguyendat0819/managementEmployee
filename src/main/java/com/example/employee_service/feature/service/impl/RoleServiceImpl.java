@@ -18,6 +18,7 @@ import com.example.employee_service.feature.service.RoleService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,7 @@ public class RoleServiceImpl implements RoleService {
     RolesRepository rolesRepository;
     UsersRepository usersRepository;
     RolePermissionRepository rolePermissionRepository;
+    JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional(readOnly = true)
@@ -92,6 +94,7 @@ public class RoleServiceImpl implements RoleService {
                 .findAllByRoleCodeAndIsDeletedFalse(role.getRoleCode());
         permissions.forEach(permission -> permission.setIsDeleted(true));
         rolePermissionRepository.saveAll(permissions);
+        jdbcTemplate.update("DELETE FROM hr_service.role_menus WHERE upper(role_code) = upper(?)", role.getRoleCode());
     }
 
     @Override
