@@ -5,14 +5,18 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
-@FieldDefaults(level = AccessLevel.PACKAGE)
+@Getter
+@Setter
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "notifications", schema = "hr_service")
 public class Notification extends BaseEntity {
 
@@ -30,4 +34,25 @@ public class Notification extends BaseEntity {
 
     @Column(name = "sent_at")
     LocalDateTime sentAt;
+
+    @Column(name = "category", nullable = false, length = 100)
+    String category = "Thông tin chung";
+
+    @Column(name = "type", nullable = false, length = 20)
+    String type = "info";
+
+    @Column(name = "icon", nullable = false, length = 50)
+    String icon = "bell";
+
+    @Column(name = "is_read", nullable = false)
+    Boolean read = false;
+
+    @Column(name = "read_at")
+    LocalDateTime readAt;
+
+    @Column(name = "reference_type", length = 50)
+    String referenceType;
+
+    @Column(name = "reference_id")
+    Long referenceId;
 }
