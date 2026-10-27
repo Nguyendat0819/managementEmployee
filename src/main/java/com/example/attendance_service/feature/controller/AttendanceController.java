@@ -6,7 +6,9 @@ import com.example.attendance_service.common.response.PageResponse;
 import com.example.attendance_service.feature.controller.api.AttendanceApi;
 import com.example.attendance_service.feature.model.request.CheckInRequest;
 import com.example.attendance_service.feature.model.request.CheckOutRequest;
+import com.example.attendance_service.feature.model.request.PayrollAttendanceRequest;
 import com.example.attendance_service.feature.model.response.AttendanceResponse;
+import com.example.attendance_service.feature.model.response.PayrollAttendanceSummaryResponse;
 import com.example.attendance_service.feature.service.AttendanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +44,10 @@ public class AttendanceController implements AttendanceApi {
                                                                  String employeeCode, String status,
                                                                  int page, int size) {
         return responseFactory.success(attendanceService.search(from, to, employeeCode, status, page, size));
+    }
+
+    @Override
+    public ApiResponse<List<PayrollAttendanceSummaryResponse>> payrollSummary(PayrollAttendanceRequest request) {
+        return responseFactory.success(attendanceService.payrollSummary(request));
     }
 }

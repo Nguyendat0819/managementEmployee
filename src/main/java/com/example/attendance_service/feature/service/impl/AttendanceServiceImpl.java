@@ -8,7 +8,10 @@ import com.example.attendance_service.feature.entity.EmployeeShiftAssignment;
 import com.example.attendance_service.feature.entity.Shift;
 import com.example.attendance_service.feature.model.request.CheckInRequest;
 import com.example.attendance_service.feature.model.request.CheckOutRequest;
+import com.example.attendance_service.feature.model.request.PayrollAttendanceRequest;
+import com.example.attendance_service.feature.model.request.PayrollEmployeePeriod;
 import com.example.attendance_service.feature.model.response.AttendanceResponse;
+import com.example.attendance_service.feature.model.response.PayrollAttendanceSummaryResponse;
 import com.example.attendance_service.feature.repository.AttendanceRecordRepository;
 import com.example.attendance_service.feature.repository.EmployeeShiftAssignmentRepository;
 import com.example.attendance_service.feature.repository.ShiftRepository;
@@ -26,6 +29,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -116,6 +127,152 @@ public class AttendanceServiceImpl implements AttendanceService {
         String normalizedStatus = status == null ? "" : status.trim();
         return PageResponse.of(repository.search(from, to, normalizedEmployeeCode, normalizedStatus,
                 PageRequest.of(page, size, Sort.unsorted())).map(AttendanceResponse::from));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PayrollAttendanceSummaryResponse> payrollSummary(PayrollAttendanceRequest request) {
+        LocalDate from = request.from();
+        LocalDate to = request.to();
+        validateRange(from, to);
+        Map<String, List<PayrollEmployeePeriod>> periodsByCode = request.employeePeriods().stream()
+                .filter(period -> period.employeeCode() != null && !period.employeeCode().isBlank()
+                        && period.from() != null && period.to() != null && !period.from().isAfter(period.to()))
+                .collect(Collectors.groupingBy(period -> normalizeCode(period.employeeCode())));
+        Set<String> codes = periodsByCode.keySet().stream()
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+        if (codes.isEmpty() || codes.size() > 1000) {
+            throw new BusinessException(DomainCode.INVALID_PARAMETER, "employeePeriods");
+        }
+
+        Set<LocalDate> holidays = new HashSet<>(request.holidays());
+        Map<Long, Shift> shifts = shiftRepository.findAllByOrderByIdAsc().stream()
+                .filter(shift -> !Boolean.TRUE.equals(shift.getIsDeleted()))
+                .collect(Collectors.toMap(Shift::getId, shift -> shift));
+        Map<String, List<EmployeeShiftAssignment>> assignments = assignmentRepository
+                .findPayrollAssignments(codes, from, to).stream()
+                .collect(Collectors.groupingBy(assignment -> normalizeCode(assignment.getEmployeeCode())));
+        Map<String, Map<LocalDate, AttendanceRecord>> records = repository.findPayrollRecords(codes, from, to).stream()
+                .collect(Collectors.groupingBy(record -> normalizeCode(record.getEmployeeCode()),
+                        Collectors.toMap(AttendanceRecord::getRecordedAt, record -> record, (first, ignored) -> first)));
+
+        return codes.stream().sorted().map(code -> summarizeEmployee(code, from, to, holidays,
+                periodsByCode.getOrDefault(code, List.of()), assignments.getOrDefault(code, List.of()),
+                records.getOrDefault(code, Map.of()), shifts)).toList();
+    }
+
+    private PayrollAttendanceSummaryResponse summarizeEmployee(String employeeCode, LocalDate from, LocalDate to,
+                                                                 Set<LocalDate> holidays,
+                                                                 List<PayrollEmployeePeriod> activePeriods,
+                                                                 List<EmployeeShiftAssignment> employeeAssignments,
+                                                                 Map<LocalDate, AttendanceRecord> employeeRecords,
+                                                                 Map<Long, Shift> shifts) {
+        List<EmployeeShiftAssignment> sortedAssignments = employeeAssignments.stream()
+                .sorted(Comparator.comparing(EmployeeShiftAssignment::getEffectiveDate).reversed())
+                .toList();
+        List<String> warnings = new ArrayList<>();
+        if (sortedAssignments.isEmpty()) {
+            warnings.add("Không có lịch phân ca trong kỳ; hệ thống không suy ra ngày vắng.");
+        }
+
+        int scheduledDays = 0;
+        int workedDays = 0;
+        int paidHolidayDays = 0;
+        int standardMinutes = 0;
+        int regularOvertime = 0;
+        int restOvertime = 0;
+        int holidayOvertime = 0;
+        Set<LocalDate> scheduledDates = new HashSet<>();
+        Set<LocalDate> processedDates = new HashSet<>();
+
+        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
+            LocalDate workDate = date;
+            if (activePeriods.stream().noneMatch(period -> !workDate.isBefore(period.from())
+                    && !workDate.isAfter(period.to()))) {
+                continue;
+            }
+            List<EmployeeShiftAssignment> activeAssignments = sortedAssignments.stream()
+                    .filter(assignment -> !assignment.getEffectiveDate().isAfter(workDate)
+                            && (assignment.getEndDate() == null || !assignment.getEndDate().isBefore(workDate)))
+                    .toList();
+            if (activeAssignments.isEmpty()) {
+                continue;
+            }
+            if (activeAssignments.size() > 1) {
+                warnings.add("Có nhiều ca cùng hiệu lực ngày " + date + "; hệ thống dùng ca có ngày bắt đầu mới nhất.");
+            }
+            Shift shift = shifts.get(activeAssignments.get(0).getShift());
+            if (shift == null || !isScheduledDay(shift, date)) {
+                continue;
+            }
+            scheduledDates.add(date);
+            int shiftMinutes = shiftDurationMinutes(shift);
+            if (!holidays.contains(date)) {
+                scheduledDays++;
+                standardMinutes += shiftMinutes;
+            }
+
+            AttendanceRecord record = employeeRecords.get(date);
+            if (holidays.contains(date)) {
+                paidHolidayDays++;
+                if (record != null) {
+                    processedDates.add(date);
+                    if (hasCompletedAttendance(record)) {
+                        holidayOvertime += positive(record.getWorkDurationMin());
+                    } else if (record.getCheckIn() != null) {
+                        warnings.add("Thiếu check-out ngày " + date + ".");
+                    }
+                }
+            } else if (hasCompletedAttendance(record)) {
+                workedDays++;
+                processedDates.add(date);
+                regularOvertime += positive(record.getOvertimeMin());
+            } else if (record != null && record.getCheckIn() != null) {
+                warnings.add("Thiếu check-out ngày " + date + ".");
+            }
+        }
+
+        for (Map.Entry<LocalDate, AttendanceRecord> entry : employeeRecords.entrySet()) {
+            LocalDate date = entry.getKey();
+            AttendanceRecord record = entry.getValue();
+            if (processedDates.contains(date) || !hasCompletedAttendance(record)
+                    || activePeriods.stream().noneMatch(period -> !date.isBefore(period.from())
+                    && !date.isAfter(period.to()))) {
+                continue;
+            }
+            if (holidays.contains(date)) {
+                holidayOvertime += positive(record.getWorkDurationMin());
+            } else if (scheduledDates.contains(date)) {
+                regularOvertime += positive(record.getOvertimeMin());
+            } else {
+                restOvertime += positive(record.getWorkDurationMin());
+            }
+        }
+
+        int absentDays = Math.max(scheduledDays - workedDays, 0);
+        if (absentDays > 0) {
+            warnings.add("Ngày không có chấm công trên ca được tính là vắng; đơn nghỉ/phép hưởng lương chưa được đối chiếu.");
+        }
+        return new PayrollAttendanceSummaryResponse(employeeCode, scheduledDays, workedDays, absentDays,
+                paidHolidayDays, standardMinutes, regularOvertime, restOvertime, holidayOvertime,
+                warnings.stream().distinct().toList());
+    }
+
+    private boolean hasCompletedAttendance(AttendanceRecord record) {
+        return record != null && record.getCheckIn() != null && record.getCheckOut() != null;
+    }
+
+    private int positive(Integer value) {
+        return value == null ? 0 : Math.max(value, 0);
+    }
+
+    private int shiftDurationMinutes(Shift shift) {
+        int minutes = (int) Duration.between(shift.getStartTime(), shift.getEndTime()).toMinutes();
+        return minutes > 0 ? minutes : minutes + 24 * 60;
+    }
+
+    private String normalizeCode(String employeeCode) {
+        return employeeCode == null ? "" : employeeCode.trim().toLowerCase(Locale.ROOT);
     }
 
     private void validateRange(LocalDate from, LocalDate to) {

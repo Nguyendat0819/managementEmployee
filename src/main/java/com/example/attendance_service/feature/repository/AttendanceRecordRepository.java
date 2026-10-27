@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Collection;
 
 public interface AttendanceRecordRepository extends JpaRepository<AttendanceRecord, Long> {
     Optional<AttendanceRecord> findByEmployeeCodeAndRecordedAt(String employeeCode, LocalDate recordedAt);
@@ -31,4 +32,14 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
                                   @Param("employeeCode") String employeeCode,
                                   @Param("status") String status,
                                   Pageable pageable);
+
+    @Query("""
+            select a from AttendanceRecord a
+            where lower(a.employeeCode) in :employeeCodes
+              and a.recordedAt between :from and :to
+            order by a.recordedAt asc
+            """)
+    List<AttendanceRecord> findPayrollRecords(@Param("employeeCodes") Collection<String> employeeCodes,
+                                               @Param("from") LocalDate from,
+                                               @Param("to") LocalDate to);
 }

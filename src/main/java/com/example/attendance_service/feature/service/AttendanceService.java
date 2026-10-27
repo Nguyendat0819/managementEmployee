@@ -2,7 +2,9 @@ package com.example.attendance_service.feature.service;
 
 import com.example.attendance_service.feature.model.request.CheckInRequest;
 import com.example.attendance_service.feature.model.request.CheckOutRequest;
+import com.example.attendance_service.feature.model.request.PayrollAttendanceRequest;
 import com.example.attendance_service.feature.model.response.AttendanceResponse;
+import com.example.attendance_service.feature.model.response.PayrollAttendanceSummaryResponse;
 import com.example.attendance_service.common.response.PageResponse;
 
 import java.time.LocalDate;
@@ -17,4 +19,6 @@ public interface AttendanceService {
 
     PageResponse<AttendanceResponse> search(LocalDate from, LocalDate to, String employeeCode,
                                             String status, int page, int size);
+
+    List<PayrollAttendanceSummaryResponse> payrollSummary(PayrollAttendanceRequest request);
 }

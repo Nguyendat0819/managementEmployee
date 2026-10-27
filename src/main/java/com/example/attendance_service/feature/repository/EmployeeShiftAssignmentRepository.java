@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Collection;
 
 public interface EmployeeShiftAssignmentRepository extends JpaRepository<EmployeeShiftAssignment, Long> {
 
@@ -36,4 +37,15 @@ public interface EmployeeShiftAssignmentRepository extends JpaRepository<Employe
             """)
     List<EmployeeShiftAssignment> findActiveAssignments(@Param("employeeCode") String employeeCode,
                                                          @Param("workDate") LocalDate workDate);
+
+    @Query("""
+            select assignment from EmployeeShiftAssignment assignment
+            where lower(assignment.employeeCode) in :employeeCodes
+              and assignment.effectiveDate <= :to
+              and (assignment.endDate is null or assignment.endDate >= :from)
+            order by assignment.effectiveDate asc
+            """)
+    List<EmployeeShiftAssignment> findPayrollAssignments(@Param("employeeCodes") Collection<String> employeeCodes,
+                                                          @Param("from") LocalDate from,
+                                                          @Param("to") LocalDate to);
 }

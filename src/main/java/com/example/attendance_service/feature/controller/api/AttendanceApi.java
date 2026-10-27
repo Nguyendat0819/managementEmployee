@@ -3,7 +3,10 @@ package com.example.attendance_service.feature.controller.api;
 import com.example.attendance_service.common.response.ApiResponse;
 import com.example.attendance_service.feature.model.request.CheckInRequest;
 import com.example.attendance_service.feature.model.request.CheckOutRequest;
+import com.example.attendance_service.feature.model.request.PayrollAttendanceRequest;
 import com.example.attendance_service.feature.model.response.AttendanceResponse;
+import com.example.attendance_service.feature.model.response.PayrollAttendanceSummaryResponse;
+import com.example.attendance_service.common.security.RequiresPermission;
 import com.example.attendance_service.common.response.PageResponse;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -38,4 +41,9 @@ public interface AttendanceApi {
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size);
+
+    @PostMapping("/payroll-summary")
+    @RequiresPermission("employee:payroll:manage")
+    ApiResponse<List<PayrollAttendanceSummaryResponse>> payrollSummary(
+            @Valid @RequestBody PayrollAttendanceRequest request);
 }
