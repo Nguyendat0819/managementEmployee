@@ -1,0 +1,70 @@
+server:
+  port: ${SERVER_PORT:8088}
+
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin RETAIN_FIRST
+          routes:
+            - id: employee-service
+              uri: ${EMPLOYEE_SERVICE_URL:http://employee-service:8080}
+              predicates:
+                - Path=/employee-service/**
+            - id: attendance-service
+              uri: ${ATTENDANCE_SERVICE_URL:http://attendance-service:8081}
+              predicates:
+                - Path=/attendance-service/**
+            - id: payroll-service
+              uri: ${PAYROLL_SERVICE_URL:http://payroll-service:8082}
+              predicates:
+                - Path=/payroll-service/**
+            - id: leave-service
+              uri: ${LEAVE_SERVICE_URL:http://leave-service:8083}
+              predicates:
+                - Path=/leave-service/**
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URL:http://notification-service:8084}
+              predicates:
+                - Path=/notification-service/**
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowed-origins:
+                  - ${CORS_ALLOWED_ORIGIN:http://localhost:4200}
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowed-headers:
+                  - '*'
+                allow-credentials: true
+          httpclient:
+            connect-timeout: ${GATEWAY_CONNECT_TIMEOUT_MS:5000}
+            response-timeout: ${GATEWAY_RESPONSE_TIMEOUT:30s}
+
+app:
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:4200}
+  jwt:
+    secret: ${APP_JWT_SECRET:development-only-secret-change-before-production}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,gateway
+  endpoint:
+    health:
+      probes:
+        enabled: true
