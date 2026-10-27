@@ -298,8 +298,18 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                                  BigDecimal requestedDays, BigDecimal totalDays) {
         BigDecimal committed = usedDays.add(pendingDays).add(requestedDays);
         if (committed.compareTo(totalDays) > 0) {
-            throw new BusinessException(DomainCode.CONFLICT, "Số ngày nghỉ vượt quá hạn mức còn lại");
+            BigDecimal remainingDays = totalDays.subtract(usedDays).subtract(pendingDays).max(BigDecimal.ZERO);
+            BigDecimal exceededDays = committed.subtract(totalDays);
+            throw new BusinessException(DomainCode.LEAVE_QUOTA_EXCEEDED,
+                    "Hạn mức khả dụng: " + formatDays(totalDays) + " ngày; đã dùng: " + formatDays(usedDays)
+                            + " ngày; đang chờ duyệt: " + formatDays(pendingDays) + " ngày; còn lại: "
+                            + formatDays(remainingDays) + " ngày. Đơn yêu cầu: " + formatDays(requestedDays)
+                            + " ngày, vượt " + formatDays(exceededDays) + " ngày.");
         }
+    }
+
+    private String formatDays(BigDecimal days) {
+        return days.stripTrailingZeros().toPlainString();
     }
 
     private void requirePending(LeaveRequest leaveRequest) {

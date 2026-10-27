@@ -34,6 +34,7 @@ public enum DomainCode {
     VALIDATION_ERROR("EMP-405", HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ: {}"),
     TOKEN_EXPIRED("EMP-406", HttpStatus.UNAUTHORIZED, "Phiên đăng nhập đã hết hạn"),
     CONFLICT("EMP-407", HttpStatus.CONFLICT, "Dữ liệu đã tồn tại hoặc đang xung đột: {}"),
+    LEAVE_QUOTA_EXCEEDED("EMP-408", HttpStatus.CONFLICT, "Vượt hạn mức nghỉ phép: {}"),
 
     //  Lỗi server / service ngoài (5xx)
     INTERNAL_ERROR("EMP-500", HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống, vui lòng thử lại sau"),

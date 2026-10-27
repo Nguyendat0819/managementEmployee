@@ -34,7 +34,7 @@ public class GlobalExceptionHandler  {
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<?> handleBusiness(BaseException e){
         log.warn("handleBusiness:{}",e.getMessage());
-        ApiResponse<?> body = apiResponseFactory.error(e.getDomainCode(), e.getMessage());
+        ApiResponse<?> body = apiResponseFactory.of(e.getDomainCode(), null, e.getArgs());
         return ResponseEntity
                 .status(e.getDomainCode().getHttpStatus())
                 .body(body);
