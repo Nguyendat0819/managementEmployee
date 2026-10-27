@@ -23,6 +23,7 @@ public interface AuthService {
     void changePassword(Jwt jwt, ChangePasswordRequest request);
     void adminResetPassword(String userName, String newPassword);
     UserResponse adminUpdateUserStatus(String userName, UsersEnum action);
+    UserResponse adminUpdateUserRole(String userName, String roleCode);
     void requestAdminPasswordReset(String email);
     List<PasswordResetRequestResponse> getPasswordResetRequests();
 }

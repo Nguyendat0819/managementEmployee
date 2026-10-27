@@ -7,6 +7,7 @@ import com.example.employee_service.feature.constant.enums.UsersEnum;
 import com.example.employee_service.feature.controller.api.UserApi;
 import com.example.employee_service.feature.model.request.AdminPasswordResetRequest;
 import com.example.employee_service.feature.model.request.UserCreateRequest;
+import com.example.employee_service.feature.model.request.UpdateUserRoleRequest;
 import com.example.employee_service.feature.model.response.UserResponse;
 import com.example.employee_service.feature.model.response.PasswordResetRequestResponse;
 import com.example.employee_service.feature.service.AuthService;
@@ -46,6 +47,11 @@ public class UserController implements UserApi {
     @Override
     public ApiResponse<UserResponse> updateUserStatus(String userName, UsersEnum action) {
         return apiResponseFactory.success(authService.adminUpdateUserStatus(userName, action));
+    }
+
+    @Override
+    public ApiResponse<UserResponse> updateUserRole(String userName, UpdateUserRoleRequest request) {
+        return apiResponseFactory.success(authService.adminUpdateUserRole(userName, request.getRoleCode()));
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.example.employee_service.common.response.ApiResponse;
 import com.example.employee_service.common.response.PageResponse;
 import com.example.employee_service.feature.constant.enums.UsersEnum;
 import com.example.employee_service.feature.model.request.UserCreateRequest;
+import com.example.employee_service.feature.model.request.UpdateUserRoleRequest;
 import com.example.employee_service.feature.model.request.AdminPasswordResetRequest;
 import com.example.employee_service.feature.model.response.UserResponse;
 import com.example.employee_service.feature.model.response.PasswordResetRequestResponse;
@@ -38,6 +39,13 @@ public interface UserApi {
     @PostMapping("/{userName}/status")
     @PreAuthorize("hasRole('ADMIN')")
     ApiResponse<UserResponse> updateUserStatus(@PathVariable String userName, @RequestParam UsersEnum action);
+
+    @Operation(summary = "Cập nhật vai trò tài khoản")
+    @PutMapping("/{userName}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    ApiResponse<UserResponse> updateUserRole(
+            @PathVariable String userName,
+            @Valid @RequestBody UpdateUserRoleRequest request);
 
     @Operation(summary = "Quản trị viên đặt mật khẩu mới cho tài khoản")
     @PutMapping("/{userName}/password")

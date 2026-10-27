@@ -7,6 +7,7 @@ import com.example.employee_service.common.util.Const;
 import com.example.employee_service.feature.entity.Users;
 import com.example.employee_service.feature.entity.Employees;
 import com.example.employee_service.feature.entity.PasswordResetRequest;
+import com.example.employee_service.feature.entity.Roles;
 import com.example.employee_service.feature.constant.enums.UsersEnum;
 import com.example.employee_service.feature.model.request.ChangePasswordRequest;
 import com.example.employee_service.feature.model.request.LoginRequest;
@@ -19,6 +20,7 @@ import com.example.employee_service.feature.model.response.PasswordResetRequestR
 import com.example.employee_service.feature.repository.UsersRepository;
 import com.example.employee_service.feature.repository.EmployeesRepository;
 import com.example.employee_service.feature.repository.PasswordResetRequestRepository;
+import com.example.employee_service.feature.repository.RolesRepository;
 import com.example.employee_service.feature.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -37,6 +39,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -52,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
     private final UsersRepository usersRepository;
     private final EmployeesRepository employeesRepository;
     private final PasswordResetRequestRepository passwordResetRequestRepository;
+    private final RolesRepository rolesRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
@@ -254,6 +258,36 @@ public class AuthServiceImpl implements AuthService {
         usersRepository.save(user);
         resolvePendingPasswordResetRequests(user.getId());
         revokeRefreshTokensForUser(user.getId());
+    }
+
+    @Override
+    @Transactional
+    public UserResponse adminUpdateUserRole(String userName, String roleCode) {
+        Users user = usersRepository.findByUserNameAndIsDeletedFalse(userName);
+        if (user == null) {
+            throw new BusinessException(DomainCode.NOT_FOUND, "tài khoản " + userName);
+        }
+
+        String normalizedRoleCode = roleCode.trim().toUpperCase(Locale.ROOT);
+        Roles role = rolesRepository.findByRoleCodeIgnoreCaseAndIsDeletedFalse(normalizedRoleCode)
+                .orElseThrow(() -> new BusinessException(DomainCode.NOT_FOUND, "vai trò " + normalizedRoleCode));
+        String nextRoleCode = role.getRoleCode();
+        if (nextRoleCode.equalsIgnoreCase(user.getRoleCode())) {
+            return buildUser(user);
+        }
+
+        if ("ADMIN".equalsIgnoreCase(user.getRoleCode())
+                && !"ADMIN".equalsIgnoreCase(nextRoleCode)
+                && IS_ACTIVE.equals(user.getStatus())
+                && usersRepository.countByRoleCodeAndStatusAndIsDeletedFalse("ADMIN", IS_ACTIVE) <= 1) {
+            throw new BusinessException(DomainCode.CONFLICT, "không thể đổi vai trò của quản trị viên đang hoạt động cuối cùng");
+        }
+
+        user.setRoleCode(nextRoleCode);
+        user.setAuthStateChangedAt(Instant.now());
+        usersRepository.save(user);
+        revokeRefreshTokensForUser(user.getId());
+        return buildUser(user);
     }
 
     @Override
