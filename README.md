@@ -1,6 +1,5 @@
-# HRM Backend
 
-Backend cho hệ thống quản lý nhân sự HRM. Hệ thống gồm API Gateway và các service nghiệp vụ chạy độc lập. Mã nguồn backend được quản lý trong repository `managementEmployee` và được chia theo nhánh, mỗi nhánh chứa một service.
+ hệ thống quản lý nhân sự HRM. Hệ thống gồm API Gateway và các service nghiệp vụ chạy độc lập. Mã nguồn backend được quản lý trong repository `managementEmployee` và được chia theo nhánh, mỗi nhánh chứa một service.
 
 ## Các service
 
