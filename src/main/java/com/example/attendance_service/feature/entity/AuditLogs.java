@@ -1,0 +1,58 @@
+package com.example.attendance_service.feature.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.experimental.FieldDefaults;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+@FieldDefaults(level = AccessLevel.PACKAGE)
+@Table(name = "audit_logs", schema = "hr_service")
+public class AuditLogs {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    Long id;
+
+    @Column(name = "user")
+    Long user;
+
+    @Column(name = "action", nullable = false, length = 50)
+    String action;
+
+    @Column(name = "entity_type", nullable = false, length = 50)
+    String entityType;
+
+    @Column(name = "entity_id")
+    Long entityId;
+
+    @Column(name = "old_value", columnDefinition = "jsonb")
+    String oldValue;
+
+    @Column(name = "new_value", columnDefinition = "jsonb")
+    String newValue;
+
+    @Column(name = "ip_address", length = 45)
+    String ipAddress;
+
+    @Column(name = "user_agent", length = 500)
+    String userAgent;
+
+    @Column(name = "request_uri", length = 500)
+    String requestUri;
+
+    @Column(name = "result", nullable = false, length = 20)
+    String result;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    LocalDateTime createdAt;
+}
