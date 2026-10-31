@@ -27,6 +27,14 @@ public record AttendanceResponse(
         LocalDate recordedAt
 ) {
     public static AttendanceResponse from(AttendanceRecord record) {
+        Integer overtimeMin = record.getOvertimeMin();
+        if (overtimeMin != null) {
+            int workDurationMin = Math.max(record.getWorkDurationMin() == null
+                    ? 0 : record.getWorkDurationMin(), 0);
+            overtimeMin = record.getShiftId() == null
+                    ? 0
+                    : Math.min(Math.max(overtimeMin, 0), workDurationMin);
+        }
         return new AttendanceResponse(
                 record.getId(),
                 record.getEmployeeCode(),
@@ -39,7 +47,7 @@ public record AttendanceResponse(
                 record.getWorkDurationMin(),
                 record.getWorkDurationMin() == null ? null : BigDecimal.valueOf(record.getWorkDurationMin())
                         .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP),
-                record.getOvertimeMin(),
+                overtimeMin,
                 record.getLateMinutes(),
                 record.getEarlyMinutes(),
                 record.getShiftId() == null ? "NO_SHIFT" : record.getStatus(),

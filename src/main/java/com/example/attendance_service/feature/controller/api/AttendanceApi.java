@@ -1,13 +1,13 @@
 package com.example.attendance_service.feature.controller.api;
 
 import com.example.attendance_service.common.response.ApiResponse;
+import com.example.attendance_service.common.response.PageResponse;
+import com.example.attendance_service.common.security.RequiresPermission;
 import com.example.attendance_service.feature.model.request.CheckInRequest;
 import com.example.attendance_service.feature.model.request.CheckOutRequest;
 import com.example.attendance_service.feature.model.request.PayrollAttendanceRequest;
 import com.example.attendance_service.feature.model.response.AttendanceResponse;
 import com.example.attendance_service.feature.model.response.PayrollAttendanceSummaryResponse;
-import com.example.attendance_service.common.security.RequiresPermission;
-import com.example.attendance_service.common.response.PageResponse;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +34,7 @@ public interface AttendanceApi {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to);
 
     @GetMapping("/records")
+    @RequiresPermission("employee:attendance:manage")
     ApiResponse<PageResponse<AttendanceResponse>> search(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,

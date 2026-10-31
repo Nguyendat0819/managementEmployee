@@ -86,10 +86,13 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
         int duration = (int) Duration.between(record.getCheckIn(), checkOut).toMinutes();
         record.setCheckOut(checkOut);
-        record.setWorkDurationMin(Math.max(duration, 0));
+        int workDuration = Math.max(duration, 0);
+        record.setWorkDurationMin(workDuration);
         LocalDateTime scheduledEnd = scheduledEnd(record);
-        int overtime = scheduledEnd == null ? 0 : (int) Duration.between(scheduledEnd, checkOut).toMinutes();
-        record.setOvertimeMin(Math.max(overtime, 0));
+        int overtime = scheduledEnd == null || record.getShiftId() == null
+                ? 0
+                : (int) Duration.between(scheduledEnd, checkOut).toMinutes();
+        record.setOvertimeMin(Math.min(Math.max(overtime, 0), workDuration));
         record.setNote(request.note());
         if (scheduledEnd == null || record.getShiftId() == null) {
             record.setStatus("NO_SHIFT");
@@ -180,7 +183,6 @@ public class AttendanceServiceImpl implements AttendanceService {
         int paidHolidayDays = 0;
         int standardMinutes = 0;
         int regularOvertime = 0;
-        int restOvertime = 0;
         int holidayOvertime = 0;
         Set<LocalDate> scheduledDates = new HashSet<>();
         Set<LocalDate> processedDates = new HashSet<>();
@@ -226,7 +228,8 @@ public class AttendanceServiceImpl implements AttendanceService {
             } else if (hasCompletedAttendance(record)) {
                 workedDays++;
                 processedDates.add(date);
-                regularOvertime += positive(record.getOvertimeMin());
+                regularOvertime += Math.min(positive(record.getOvertimeMin()),
+                        positive(record.getWorkDurationMin()));
             } else if (record != null && record.getCheckIn() != null) {
                 warnings.add("Thiếu check-out ngày " + date + ".");
             }
@@ -243,9 +246,8 @@ public class AttendanceServiceImpl implements AttendanceService {
             if (holidays.contains(date)) {
                 holidayOvertime += positive(record.getWorkDurationMin());
             } else if (scheduledDates.contains(date)) {
-                regularOvertime += positive(record.getOvertimeMin());
-            } else {
-                restOvertime += positive(record.getWorkDurationMin());
+                regularOvertime += Math.min(positive(record.getOvertimeMin()),
+                        positive(record.getWorkDurationMin()));
             }
         }
 
@@ -254,7 +256,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             warnings.add("Ngày không có chấm công trên ca được tính là vắng; đơn nghỉ/phép hưởng lương chưa được đối chiếu.");
         }
         return new PayrollAttendanceSummaryResponse(employeeCode, scheduledDays, workedDays, absentDays,
-                paidHolidayDays, standardMinutes, regularOvertime, restOvertime, holidayOvertime,
+                paidHolidayDays, standardMinutes, regularOvertime, 0, holidayOvertime,
                 warnings.stream().distinct().toList());
     }
 
