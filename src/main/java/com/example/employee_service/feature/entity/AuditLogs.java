@@ -38,6 +38,15 @@ public class AuditLogs {
     @Column(name = "ip_address", length = 45)
     String ipAddress;
 
+    @Column(name = "user_agent", length = 500)
+    String userAgent;
+
+    @Column(name = "request_uri", length = 500)
+    String requestUri;
+
+    @Column(name = "result", nullable = false, length = 20)
+    String result;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     LocalDateTime createdAt;
 }

@@ -13,6 +13,7 @@ import com.example.employee_service.feature.model.response.EmployeeResponse;
 import com.example.employee_service.feature.repository.DepartmentsRepository;
 import com.example.employee_service.feature.repository.EmployeesRepository;
 import com.example.employee_service.feature.service.OrganizationService;
+import jakarta.persistence.EntityManager;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,12 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,17 +34,28 @@ public class OrganizationServiceImpl implements OrganizationService {
     EmployeesRepository employeesRepository;
     DepartmentsRepository departmentsRepository;
     DepartMapper  departMapper;
+    EntityManager entityManager;
     @Override
+    @Transactional
     public DepartmentResponse createDepartment(DepartmentsRequest request) {
 //      Kiểm tra hàm đã xóa hay chưa
         Departments departments = departmentsRepository.findByDeptCodeAndIsDeleted(request.getDeptCode(), Const.IN_DELETED);
         if(departments != null) {
             throw new BusinessException(DomainCode.CONFLICT, departments.getName());
         }
+        String headCode = normalize(request.getHeadCode());
+        if (headCode != null && employeesRepository.findByEmployeeCodeIgnoreCaseAndIsDeletedFalse(headCode).isEmpty()) {
+            throw new BusinessException(DomainCode.NOT_FOUND, "nhân viên phụ trách " + headCode);
+        }
         Departments newDepartments = departMapper.toEntity(request);
+        newDepartments.setHeadCode(headCode);
         newDepartments.setIsDeleted(Const.IN_DELETED);
-        departmentsRepository.save(newDepartments);
-        return toDepartmentResponse( newDepartments, 0);
+        Departments savedDepartment = departmentsRepository.saveAndFlush(newDepartments);
+        entityManager.refresh(savedDepartment);
+        return toDepartmentResponse(
+                savedDepartment,
+                countDepartmentEmployees(savedDepartment, employeesRepository.findAllByIsDeletedFalseOrderByFullNameAsc())
+        );
     }
 
     @Override
@@ -73,7 +84,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         List<Departments> changedDepartments = updateDescendantLevels(departments);
         Departments updateDepartments = departmentsRepository.save(departments);
         departmentsRepository.saveAll(changedDepartments);
-        return toDepartmentResponse(updateDepartments, 0);
+        departmentsRepository.flush();
+        entityManager.refresh(updateDepartments);
+        return toDepartmentResponse(
+                updateDepartments,
+                countDepartmentEmployees(updateDepartments, employeesRepository.findAllByIsDeletedFalseOrderByFullNameAsc())
+        );
     }
 
     private void validateParentChange(Departments department, Departments parent) {
@@ -140,9 +156,6 @@ public class OrganizationServiceImpl implements OrganizationService {
             Boolean isDeleted
     ) {
         List<Employees> employees = employeesRepository.findAllByIsDeletedFalseOrderByFullNameAsc();
-        Map<String, Long> employeeCounts = employees.stream()
-                .filter(employee -> employee.getDepartmentCode() != null)
-                .collect(Collectors.groupingBy(Employees::getDepartmentCode, Collectors.counting()));
 
         String normalizedSearch = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
         String normalizedParentCode = parentCode == null ? null : parentCode.trim();
@@ -156,14 +169,49 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         return departments
                 .stream()
-                .map(department -> toDepartmentResponse(department, employeeCounts.getOrDefault(department.getDeptCode(), 0L)))
+                .map(department -> toDepartmentResponse(department, countDepartmentEmployees(department, employees)))
                 .toList();
+    }
+
+    private long countDepartmentEmployees(Departments department, List<Employees> activeEmployees) {
+        Set<String> employeeCodes = new HashSet<>();
+        String headCode = normalizeEmployeeCode(department.getHeadCode());
+
+        for (Employees employee : activeEmployees) {
+            String employeeCode = normalizeEmployeeCode(employee.getEmployeeCode());
+            if (employeeCode == null) continue;
+
+            if (department.getDeptCode().equals(employee.getDepartmentCode()) || employeeCode.equals(headCode)) {
+                employeeCodes.add(employeeCode);
+            }
+        }
+
+        return employeeCodes.size();
+    }
+
+    private String normalizeEmployeeCode(String employeeCode) {
+        return employeeCode == null || employeeCode.isBlank()
+                ? null
+                : employeeCode.trim().toUpperCase(Locale.ROOT);
     }
 
     @Override
     public List<EmployeeResponse> getEmployeesByDepartment(String departmentCode) {
-        return employeesRepository.findAllByIsDeletedFalseAndDepartmentCodeOrderByFullNameAsc(departmentCode)
-                .stream()
+        List<Employees> departmentEmployees = new ArrayList<>(
+                employeesRepository.findAllByIsDeletedFalseAndDepartmentCodeOrderByFullNameAsc(departmentCode)
+        );
+        Departments department = departmentsRepository.findByDeptCodeAndIsDeleted(departmentCode, Const.IN_DELETED);
+        if (department != null && department.getHeadCode() != null) {
+            employeesRepository.findByEmployeeCodeIgnoreCaseAndIsDeletedFalse(department.getHeadCode())
+                    .ifPresent(head -> {
+                        boolean alreadyIncluded = departmentEmployees.stream()
+                                .anyMatch(employee -> employee.getEmployeeCode().equalsIgnoreCase(head.getEmployeeCode()));
+                        if (!alreadyIncluded) departmentEmployees.add(head);
+                    });
+        }
+
+        return departmentEmployees.stream()
+                .sorted(Comparator.comparing(Employees::getFullName, String.CASE_INSENSITIVE_ORDER))
                 .map(this::toEmployeeResponse)
                 .toList();
     }

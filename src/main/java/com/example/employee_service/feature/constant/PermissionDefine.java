@@ -59,4 +59,6 @@ public final class PermissionDefine {
     public static final String PERMISSION_CREATE = "employee:permission:create";
     public static final String PERMISSION_UPDATE = "employee:permission:update";
     public static final String PERMISSION_DELETE = "employee:permission:delete";
+
+    public static final String AUDIT_LOG_READ = "employee:audit-log:read";
 }
