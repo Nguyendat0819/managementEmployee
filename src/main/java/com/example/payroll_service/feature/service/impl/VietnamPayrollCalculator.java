@@ -49,8 +49,7 @@ public class VietnamPayrollCalculator {
                         .add(hourlyRate(monthlyBase, standardMinutes)
                                 .multiply(BigDecimal.valueOf(restMinutes)).multiply(new BigDecimal("2")))
                         .add(hourlyRate(monthlyBase, standardMinutes)
-                                .multiply(BigDecimal.valueOf(holidayMinutes)).multiply(new BigDecimal("3")))
-                        .divide(BigDecimal.valueOf(60), 0, RoundingMode.HALF_UP));
+                                .multiply(BigDecimal.valueOf(holidayMinutes)).multiply(new BigDecimal("3"))));
         BigDecimal gross = money(earnedBase.add(earnedAllowance).add(overtimePay).add(taskBonus));
 
         BigDecimal insuranceBase = cappedInsuranceBase(monthlyInsuranceBase, periodStart);

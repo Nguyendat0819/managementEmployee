@@ -15,7 +15,7 @@ Chỉ kỳ nháp chưa có phiếu mới chạy được tự động. Phiếu n
 
 - Lương cơ bản và phụ cấp tháng được phân bổ theo ngày hợp đồng hiệu lực trong tháng.
 - Tỷ lệ hưởng lương = `(ngày công + ngày lễ hưởng lương) / (ngày làm theo ca + ngày lễ hưởng lương)`, tối đa 100%. Khi chưa có lịch phân ca, hệ thống không suy ra vắng và giữ nguyên lương tháng.
-- Phút làm thêm được phân loại theo ngày thường (150%), ngày nghỉ hằng tuần (200%) và ngày lễ hưởng lương (300%). Đơn giá mỗi phút lấy từ lương cơ bản tháng chia tổng phút làm việc chuẩn đã phân ca trong kỳ.
+- Tăng ca ngày thường chỉ lấy thời gian sau giờ kết thúc ca đã phân, không vượt quá tổng thời lượng check-in đến check-out, và hưởng mức 150%. Ngày không có ca không tự phát sinh tăng ca; thời gian làm ngày lễ vẫn được tính theo mức 300%. Đơn giá mỗi phút lấy từ lương cơ bản tháng chia tổng phút làm việc chuẩn đã phân ca trong kỳ.
 - Gross = lương cơ bản đã hưởng + phụ cấp đã hưởng + tiền làm thêm. Thưởng và khấu trừ khác mặc định bằng 0 vì chưa có nguồn dữ liệu tương ứng.
 - Thu nhập tính thuế = thu nhập chịu thuế từ lương, phụ cấp và làm thêm trừ phần làm thêm được miễn thuế và các khoản bảo hiểm bắt buộc của người lao động.
 - Kỳ tính thuế từ năm 2026 dùng giảm trừ cá nhân 15,5 triệu đồng/tháng, giảm trừ người phụ thuộc 6,2 triệu đồng/tháng và biểu thuế lũy tiến 5 bậc. Kỳ trước 2026 dùng biểu và mức giảm trừ cũ.
